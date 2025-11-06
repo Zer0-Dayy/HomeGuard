@@ -1,0 +1,21 @@
+HC-SR04 Ultrasonic Sensor Pin Layout:
+  5V -> VCC
+  GND -> GND
+  PA5 (GPIO_Output) -> TRIG
+  PA6 (TEM3_CH1) -> ECHO
+
+ESP-01 Wi-Fi Module:
+  3V3 -> VCC
+  GND -> GND
+  3V3 -> CH_PD
+  3V3 -> RST
+  3V3 -> GPIO-2
+  3V3 -> GPIO-0
+  PB6 (USART1_TX) -> RXD
+  PB7 (USART1_RX) -> TXD
+
+BME-280 Combined Digital Sensor:
+  PB8 (SCL) -> SCL
+  PB9 (SDA) -> SDA 
+  3V3 ->  VCC
+  GND  -> GND
