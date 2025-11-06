@@ -1,3 +1,4 @@
+                                                                        // STM32F4 -> SENSOR \\
 HC-SR04 Ultrasonic Sensor Pin Layout:
   5V -> VCC
   GND -> GND
