@@ -14,7 +14,6 @@ def load_env_file(filepath="./.env"):
 load_env_file()
 
 API_KEY = os.getenv("API_KEY")
-print(API_KEY)
 headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
 
 # Example batch payload (preferred)
