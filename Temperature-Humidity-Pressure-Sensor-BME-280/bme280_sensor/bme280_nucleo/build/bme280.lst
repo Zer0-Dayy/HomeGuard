@@ -1,0 +1,1784 @@
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"bme280.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Core/Src/bme280.c"
+  20              		.section	.text.bme280_compensate_temperature,"ax",%progbits
+  21              		.align	1
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	bme280_compensate_temperature:
+  27              	.LVL0:
+  28              	.LFB140:
+   1:Core/Src/bme280.c **** #include "bme280.h"
+   2:Core/Src/bme280.c **** #include <string.h>
+   3:Core/Src/bme280.c **** 
+   4:Core/Src/bme280.c **** #define BME280_REG_ID 0xD0U
+   5:Core/Src/bme280.c **** #define BME280_REG_RESET 0xE0U
+   6:Core/Src/bme280.c **** #define BME280_REG_CTRL_HUM 0xF2U
+   7:Core/Src/bme280.c **** #define BME280_REG_STATUS 0xF3U
+   8:Core/Src/bme280.c **** #define BME280_REG_CTRL_MEAS 0xF4U
+   9:Core/Src/bme280.c **** #define BME280_REG_CONFIG 0xF5U
+  10:Core/Src/bme280.c **** #define BME280_REG_PRESS_MSB 0xF7U
+  11:Core/Src/bme280.c **** 
+  12:Core/Src/bme280.c **** #define BME280_RESET_VALUE 0xB6U
+  13:Core/Src/bme280.c **** 
+  14:Core/Src/bme280.c **** #define BME280_STATUS_MEASURING (1U << 3)
+  15:Core/Src/bme280.c **** #define BME280_TIMEOUT_MS 100U
+  16:Core/Src/bme280.c **** 
+  17:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_read_calibration(BME280_Handle_t *dev);
+  18:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_write8(BME280_Handle_t *dev, uint8_t reg, uint8_t value);
+  19:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_read8(BME280_Handle_t *dev, uint8_t reg, uint8_t *value);
+  20:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_read_block(BME280_Handle_t *dev, uint8_t reg, uint8_t *buf, uint16_
+  21:Core/Src/bme280.c **** static float bme280_compensate_temperature(BME280_Handle_t *dev, int32_t adc_T);
+  22:Core/Src/bme280.c **** static float bme280_compensate_pressure(const BME280_Handle_t *dev, int32_t adc_P);
+  23:Core/Src/bme280.c **** static float bme280_compensate_humidity(const BME280_Handle_t *dev, int32_t adc_H);
+  24:Core/Src/bme280.c **** 
+  25:Core/Src/bme280.c **** HAL_StatusTypeDef BME280_Init(BME280_Handle_t *dev)
+  26:Core/Src/bme280.c **** {
+  27:Core/Src/bme280.c ****   if (dev == NULL || dev->i2c == NULL)
+  28:Core/Src/bme280.c ****   {
+  29:Core/Src/bme280.c ****     return HAL_ERROR;
+  30:Core/Src/bme280.c ****   }
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 2
+
+
+  31:Core/Src/bme280.c **** 
+  32:Core/Src/bme280.c ****   uint8_t id = 0U;
+  33:Core/Src/bme280.c ****   HAL_StatusTypeDef status = bme280_read8(dev, BME280_REG_ID, &id);
+  34:Core/Src/bme280.c ****   if (status != HAL_OK)
+  35:Core/Src/bme280.c ****   {
+  36:Core/Src/bme280.c ****     return status;
+  37:Core/Src/bme280.c ****   }
+  38:Core/Src/bme280.c **** 
+  39:Core/Src/bme280.c ****   if (id != 0x60U)
+  40:Core/Src/bme280.c ****   {
+  41:Core/Src/bme280.c ****     return HAL_ERROR;
+  42:Core/Src/bme280.c ****   }
+  43:Core/Src/bme280.c **** 
+  44:Core/Src/bme280.c ****   uint8_t reset = BME280_RESET_VALUE;
+  45:Core/Src/bme280.c ****   status = bme280_write8(dev, BME280_REG_RESET, reset);
+  46:Core/Src/bme280.c ****   if (status != HAL_OK)
+  47:Core/Src/bme280.c ****   {
+  48:Core/Src/bme280.c ****     return status;
+  49:Core/Src/bme280.c ****   }
+  50:Core/Src/bme280.c **** 
+  51:Core/Src/bme280.c ****   HAL_Delay(2);
+  52:Core/Src/bme280.c **** 
+  53:Core/Src/bme280.c ****   status = bme280_read_calibration(dev);
+  54:Core/Src/bme280.c ****   if (status != HAL_OK)
+  55:Core/Src/bme280.c ****   {
+  56:Core/Src/bme280.c ****     return status;
+  57:Core/Src/bme280.c ****   }
+  58:Core/Src/bme280.c **** 
+  59:Core/Src/bme280.c ****   /* Configure for single forced measurements with minimal filtering */
+  60:Core/Src/bme280.c ****   status = bme280_write8(dev, BME280_REG_CONFIG, 0x00U);
+  61:Core/Src/bme280.c ****   if (status != HAL_OK)
+  62:Core/Src/bme280.c ****   {
+  63:Core/Src/bme280.c ****     return status;
+  64:Core/Src/bme280.c ****   }
+  65:Core/Src/bme280.c **** 
+  66:Core/Src/bme280.c ****   /* Prime humidity oversampling; datasheet requires writing ctrl_hum before ctrl_meas */
+  67:Core/Src/bme280.c ****   status = bme280_write8(dev, BME280_REG_CTRL_HUM, 0x01U);
+  68:Core/Src/bme280.c ****   return status;
+  69:Core/Src/bme280.c **** }
+  70:Core/Src/bme280.c **** 
+  71:Core/Src/bme280.c **** HAL_StatusTypeDef BME280_ReadMeasurements(BME280_Handle_t *dev, BME280_Measurement_t *out)
+  72:Core/Src/bme280.c **** {
+  73:Core/Src/bme280.c ****   if (dev == NULL || out == NULL)
+  74:Core/Src/bme280.c ****   {
+  75:Core/Src/bme280.c ****     return HAL_ERROR;
+  76:Core/Src/bme280.c ****   }
+  77:Core/Src/bme280.c **** 
+  78:Core/Src/bme280.c ****   HAL_StatusTypeDef status = bme280_write8(dev, BME280_REG_CTRL_MEAS, 0x25U);
+  79:Core/Src/bme280.c ****   if (status != HAL_OK)
+  80:Core/Src/bme280.c ****   {
+  81:Core/Src/bme280.c ****     return status;
+  82:Core/Src/bme280.c ****   }
+  83:Core/Src/bme280.c **** 
+  84:Core/Src/bme280.c ****   uint8_t status_reg = 0U;
+  85:Core/Src/bme280.c ****   uint32_t timeout = HAL_GetTick() + 20U;
+  86:Core/Src/bme280.c ****   do
+  87:Core/Src/bme280.c ****   {
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 3
+
+
+  88:Core/Src/bme280.c ****     status = bme280_read8(dev, BME280_REG_STATUS, &status_reg);
+  89:Core/Src/bme280.c ****     if (status != HAL_OK)
+  90:Core/Src/bme280.c ****     {
+  91:Core/Src/bme280.c ****       return status;
+  92:Core/Src/bme280.c ****     }
+  93:Core/Src/bme280.c **** 
+  94:Core/Src/bme280.c ****     if (!(status_reg & BME280_STATUS_MEASURING))
+  95:Core/Src/bme280.c ****     {
+  96:Core/Src/bme280.c ****       break;
+  97:Core/Src/bme280.c ****     }
+  98:Core/Src/bme280.c ****   } while (HAL_GetTick() < timeout);
+  99:Core/Src/bme280.c **** 
+ 100:Core/Src/bme280.c ****   if (status_reg & BME280_STATUS_MEASURING)
+ 101:Core/Src/bme280.c ****   {
+ 102:Core/Src/bme280.c ****     return HAL_TIMEOUT;
+ 103:Core/Src/bme280.c ****   }
+ 104:Core/Src/bme280.c **** 
+ 105:Core/Src/bme280.c ****   uint8_t raw[8] = {0};
+ 106:Core/Src/bme280.c ****   status = bme280_read_block(dev, BME280_REG_PRESS_MSB, raw, sizeof(raw));
+ 107:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 108:Core/Src/bme280.c ****   {
+ 109:Core/Src/bme280.c ****     return status;
+ 110:Core/Src/bme280.c ****   }
+ 111:Core/Src/bme280.c **** 
+ 112:Core/Src/bme280.c ****   int32_t adc_P = ((int32_t)raw[0] << 12) | ((int32_t)raw[1] << 4) | ((int32_t)raw[2] >> 4);
+ 113:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 114:Core/Src/bme280.c ****   int32_t adc_H = ((int32_t)raw[6] << 8) | (int32_t)raw[7];
+ 115:Core/Src/bme280.c **** 
+ 116:Core/Src/bme280.c ****   out->temperature_c = bme280_compensate_temperature(dev, adc_T);
+ 117:Core/Src/bme280.c ****   out->pressure_pa = bme280_compensate_pressure(dev, adc_P);
+ 118:Core/Src/bme280.c ****   out->humidity_rh = bme280_compensate_humidity(dev, adc_H);
+ 119:Core/Src/bme280.c **** 
+ 120:Core/Src/bme280.c ****   return HAL_OK;
+ 121:Core/Src/bme280.c **** }
+ 122:Core/Src/bme280.c **** 
+ 123:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_read_calibration(BME280_Handle_t *dev)
+ 124:Core/Src/bme280.c **** {
+ 125:Core/Src/bme280.c ****   uint8_t buf1[26];
+ 126:Core/Src/bme280.c ****   HAL_StatusTypeDef status = bme280_read_block(dev, 0x88U, buf1, sizeof(buf1));
+ 127:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 128:Core/Src/bme280.c ****   {
+ 129:Core/Src/bme280.c ****     return status;
+ 130:Core/Src/bme280.c ****   }
+ 131:Core/Src/bme280.c **** 
+ 132:Core/Src/bme280.c ****   dev->calib.dig_T1 = (uint16_t)((buf1[1] << 8) | buf1[0]);
+ 133:Core/Src/bme280.c ****   dev->calib.dig_T2 = (int16_t)((buf1[3] << 8) | buf1[2]);
+ 134:Core/Src/bme280.c ****   dev->calib.dig_T3 = (int16_t)((buf1[5] << 8) | buf1[4]);
+ 135:Core/Src/bme280.c ****   dev->calib.dig_P1 = (uint16_t)((buf1[7] << 8) | buf1[6]);
+ 136:Core/Src/bme280.c ****   dev->calib.dig_P2 = (int16_t)((buf1[9] << 8) | buf1[8]);
+ 137:Core/Src/bme280.c ****   dev->calib.dig_P3 = (int16_t)((buf1[11] << 8) | buf1[10]);
+ 138:Core/Src/bme280.c ****   dev->calib.dig_P4 = (int16_t)((buf1[13] << 8) | buf1[12]);
+ 139:Core/Src/bme280.c ****   dev->calib.dig_P5 = (int16_t)((buf1[15] << 8) | buf1[14]);
+ 140:Core/Src/bme280.c ****   dev->calib.dig_P6 = (int16_t)((buf1[17] << 8) | buf1[16]);
+ 141:Core/Src/bme280.c ****   dev->calib.dig_P7 = (int16_t)((buf1[19] << 8) | buf1[18]);
+ 142:Core/Src/bme280.c ****   dev->calib.dig_P8 = (int16_t)((buf1[21] << 8) | buf1[20]);
+ 143:Core/Src/bme280.c ****   dev->calib.dig_P9 = (int16_t)((buf1[23] << 8) | buf1[22]);
+ 144:Core/Src/bme280.c ****   dev->calib.dig_H1 = buf1[25];
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 4
+
+
+ 145:Core/Src/bme280.c **** 
+ 146:Core/Src/bme280.c ****   uint8_t buf2[7];
+ 147:Core/Src/bme280.c ****   status = bme280_read_block(dev, 0xE1U, buf2, sizeof(buf2));
+ 148:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 149:Core/Src/bme280.c ****   {
+ 150:Core/Src/bme280.c ****     return status;
+ 151:Core/Src/bme280.c ****   }
+ 152:Core/Src/bme280.c **** 
+ 153:Core/Src/bme280.c ****   dev->calib.dig_H2 = (int16_t)((buf2[1] << 8) | buf2[0]);
+ 154:Core/Src/bme280.c ****   dev->calib.dig_H3 = buf2[2];
+ 155:Core/Src/bme280.c ****   dev->calib.dig_H4 = (int16_t)((buf2[3] << 4) | (buf2[4] & 0x0FU));
+ 156:Core/Src/bme280.c ****   dev->calib.dig_H5 = (int16_t)((buf2[5] << 4) | (buf2[4] >> 4));
+ 157:Core/Src/bme280.c ****   dev->calib.dig_H6 = (int8_t)buf2[6];
+ 158:Core/Src/bme280.c **** 
+ 159:Core/Src/bme280.c ****   return HAL_OK;
+ 160:Core/Src/bme280.c **** }
+ 161:Core/Src/bme280.c **** 
+ 162:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_write8(BME280_Handle_t *dev, uint8_t reg, uint8_t value)
+ 163:Core/Src/bme280.c **** {
+ 164:Core/Src/bme280.c ****   return HAL_I2C_Mem_Write(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, &value, 1U, BME280_TI
+ 165:Core/Src/bme280.c **** }
+ 166:Core/Src/bme280.c **** 
+ 167:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_read8(BME280_Handle_t *dev, uint8_t reg, uint8_t *value)
+ 168:Core/Src/bme280.c **** {
+ 169:Core/Src/bme280.c ****   return HAL_I2C_Mem_Read(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, value, 1U, BME280_TIME
+ 170:Core/Src/bme280.c **** }
+ 171:Core/Src/bme280.c **** 
+ 172:Core/Src/bme280.c **** static HAL_StatusTypeDef bme280_read_block(BME280_Handle_t *dev, uint8_t reg, uint8_t *buf, uint16_
+ 173:Core/Src/bme280.c **** {
+ 174:Core/Src/bme280.c ****   return HAL_I2C_Mem_Read(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, buf, len, BME280_TIMEO
+ 175:Core/Src/bme280.c **** }
+ 176:Core/Src/bme280.c **** 
+ 177:Core/Src/bme280.c **** static float bme280_compensate_temperature(BME280_Handle_t *dev, int32_t adc_T)
+ 178:Core/Src/bme280.c **** {
+  29              		.loc 1 178 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		@ link register save eliminated.
+ 179:Core/Src/bme280.c ****   if (adc_T == 0x800000)
+  34              		.loc 1 179 3 view .LVU1
+  35              		.loc 1 179 6 is_stmt 0 view .LVU2
+  36 0000 B1F5000F 		cmp	r1, #8388608
+  37 0004 39D0     		beq	.L3
+ 180:Core/Src/bme280.c ****   {
+ 181:Core/Src/bme280.c ****     return 0.0f;
+ 182:Core/Src/bme280.c ****   }
+ 183:Core/Src/bme280.c **** 
+ 184:Core/Src/bme280.c ****   float var1 = ((adc_T / 16384.0f) - (dev->calib.dig_T1 / 1024.0f)) * dev->calib.dig_T2;
+  38              		.loc 1 184 3 is_stmt 1 view .LVU3
+  39              		.loc 1 184 24 is_stmt 0 view .LVU4
+  40 0006 07EE901A 		vmov	s15, r1	@ int
+  41 000a F8EEE77A 		vcvt.f32.s32	s15, s15
+  42 000e 9FED1C7A 		vldr.32	s14, .L4
+  43 0012 27EE877A 		vmul.f32	s14, s15, s14
+  44              		.loc 1 184 49 view .LVU5
+  45 0016 C388     		ldrh	r3, [r0, #6]
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 5
+
+
+  46 0018 06EE903A 		vmov	s13, r3	@ int
+  47              		.loc 1 184 57 view .LVU6
+  48 001c F8EEE66A 		vcvt.f32.s32	s13, s13
+  49 0020 9FED186A 		vldr.32	s12, .L4+4
+  50 0024 26EE866A 		vmul.f32	s12, s13, s12
+  51              		.loc 1 184 36 view .LVU7
+  52 0028 37EE467A 		vsub.f32	s14, s14, s12
+  53              		.loc 1 184 81 view .LVU8
+  54 002c B0F90830 		ldrsh	r3, [r0, #8]
+  55 0030 06EE103A 		vmov	s12, r3	@ int
+  56              		.loc 1 184 69 view .LVU9
+  57 0034 B8EEC66A 		vcvt.f32.s32	s12, s12
+  58              		.loc 1 184 9 view .LVU10
+  59 0038 27EE067A 		vmul.f32	s14, s14, s12
+  60              	.LVL1:
+ 185:Core/Src/bme280.c ****   float var2 = (((adc_T / 131072.0f) - (dev->calib.dig_T1 / 8192.0f)) *
+  61              		.loc 1 185 3 is_stmt 1 view .LVU11
+  62              		.loc 1 185 25 is_stmt 0 view .LVU12
+  63 003c 9FED126A 		vldr.32	s12, .L4+8
+  64 0040 67EE867A 		vmul.f32	s15, s15, s12
+  65              		.loc 1 185 59 view .LVU13
+  66 0044 9FED116A 		vldr.32	s12, .L4+12
+  67 0048 66EE866A 		vmul.f32	s13, s13, s12
+  68              		.loc 1 185 38 view .LVU14
+  69 004c 77EEE67A 		vsub.f32	s15, s15, s13
+  70              		.loc 1 185 71 view .LVU15
+  71 0050 67EEA77A 		vmul.f32	s15, s15, s15
+ 186:Core/Src/bme280.c ****                 ((adc_T / 131072.0f) - (dev->calib.dig_T1 / 8192.0f))) *
+ 187:Core/Src/bme280.c ****                dev->calib.dig_T3;
+  72              		.loc 1 187 26 view .LVU16
+  73 0054 B0F90A30 		ldrsh	r3, [r0, #10]
+  74 0058 06EE903A 		vmov	s13, r3	@ int
+ 186:Core/Src/bme280.c ****                 ((adc_T / 131072.0f) - (dev->calib.dig_T1 / 8192.0f))) *
+  75              		.loc 1 186 72 view .LVU17
+  76 005c F8EEE66A 		vcvt.f32.s32	s13, s13
+ 185:Core/Src/bme280.c ****   float var2 = (((adc_T / 131072.0f) - (dev->calib.dig_T1 / 8192.0f)) *
+  77              		.loc 1 185 9 view .LVU18
+  78 0060 67EEA67A 		vmul.f32	s15, s15, s13
+  79              	.LVL2:
+ 188:Core/Src/bme280.c **** 
+ 189:Core/Src/bme280.c ****   dev->t_fine = (int32_t)(var1 + var2);
+  80              		.loc 1 189 3 is_stmt 1 view .LVU19
+  81              		.loc 1 189 32 is_stmt 0 view .LVU20
+  82 0064 77EE277A 		vadd.f32	s15, s14, s15
+  83              	.LVL3:
+  84              		.loc 1 189 17 view .LVU21
+  85 0068 BDEEE77A 		vcvt.s32.f32	s14, s15
+  86              	.LVL4:
+  87              		.loc 1 189 15 view .LVU22
+  88 006c 80ED0B7A 		vstr.32	s14, [r0, #44]	@ int
+ 190:Core/Src/bme280.c ****   return (var1 + var2) / 5120.0f;
+  89              		.loc 1 190 3 is_stmt 1 view .LVU23
+  90              		.loc 1 190 24 is_stmt 0 view .LVU24
+  91 0070 9FED077A 		vldr.32	s14, .L4+16
+  92 0074 87EE870A 		vdiv.f32	s0, s15, s14
+  93 0078 7047     		bx	lr
+  94              	.LVL5:
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 6
+
+
+  95              	.L3:
+ 181:Core/Src/bme280.c ****   }
+  96              		.loc 1 181 12 view .LVU25
+  97 007a 9FED060A 		vldr.32	s0, .L4+20
+ 191:Core/Src/bme280.c **** }
+  98              		.loc 1 191 1 view .LVU26
+  99 007e 7047     		bx	lr
+ 100              	.L5:
+ 101              		.align	2
+ 102              	.L4:
+ 103 0080 00008038 		.word	947912704
+ 104 0084 0000803A 		.word	981467136
+ 105 0088 00000037 		.word	922746880
+ 106 008c 00000039 		.word	956301312
+ 107 0090 0000A045 		.word	1168113664
+ 108 0094 00000000 		.word	0
+ 109              		.cfi_endproc
+ 110              	.LFE140:
+ 112              		.section	.text.bme280_compensate_pressure,"ax",%progbits
+ 113              		.align	1
+ 114              		.syntax unified
+ 115              		.thumb
+ 116              		.thumb_func
+ 118              	bme280_compensate_pressure:
+ 119              	.LVL6:
+ 120              	.LFB141:
+ 192:Core/Src/bme280.c **** 
+ 193:Core/Src/bme280.c **** static float bme280_compensate_pressure(const BME280_Handle_t *dev, int32_t adc_P)
+ 194:Core/Src/bme280.c **** {
+ 121              		.loc 1 194 1 is_stmt 1 view -0
+ 122              		.cfi_startproc
+ 123              		@ args = 0, pretend = 0, frame = 0
+ 124              		@ frame_needed = 0, uses_anonymous_args = 0
+ 125              		@ link register save eliminated.
+ 195:Core/Src/bme280.c ****   if (adc_P == 0x800000)
+ 126              		.loc 1 195 3 view .LVU28
+ 127              		.loc 1 195 6 is_stmt 0 view .LVU29
+ 128 0000 B1F5000F 		cmp	r1, #8388608
+ 129 0004 00F09F80 		beq	.L8
+ 196:Core/Src/bme280.c ****   {
+ 197:Core/Src/bme280.c ****     return 0.0f;
+ 198:Core/Src/bme280.c ****   }
+ 199:Core/Src/bme280.c **** 
+ 200:Core/Src/bme280.c ****   float var1 = (dev->t_fine / 2.0f) - 64000.0f;
+ 130              		.loc 1 200 3 is_stmt 1 view .LVU30
+ 131              		.loc 1 200 29 is_stmt 0 view .LVU31
+ 132 0008 D0ED0B7A 		vldr.32	s15, [r0, #44]	@ int
+ 133 000c F8EEE76A 		vcvt.f32.s32	s13, s15
+ 134 0010 F6EE007A 		vmov.f32	s15, #5.0e-1
+ 135 0014 66EEA76A 		vmul.f32	s13, s13, s15
+ 136              		.loc 1 200 9 view .LVU32
+ 137 0018 DFED4E7A 		vldr.32	s15, .L10
+ 138 001c 76EEE76A 		vsub.f32	s13, s13, s15
+ 139              	.LVL7:
+ 201:Core/Src/bme280.c ****   float var2 = var1 * var1 * (dev->calib.dig_P6 / 32768.0f);
+ 140              		.loc 1 201 3 is_stmt 1 view .LVU33
+ 141              		.loc 1 201 21 is_stmt 0 view .LVU34
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 7
+
+
+ 142 0020 26EEA67A 		vmul.f32	s14, s13, s13
+ 143              		.loc 1 201 41 view .LVU35
+ 144 0024 B0F91630 		ldrsh	r3, [r0, #22]
+ 145 0028 07EE903A 		vmov	s15, r3	@ int
+ 146              		.loc 1 201 49 view .LVU36
+ 147 002c F8EEE77A 		vcvt.f32.s32	s15, s15
+ 148 0030 DFED495A 		vldr.32	s11, .L10+4
+ 149 0034 67EEA57A 		vmul.f32	s15, s15, s11
+ 150              		.loc 1 201 9 view .LVU37
+ 151 0038 27EE277A 		vmul.f32	s14, s14, s15
+ 152              	.LVL8:
+ 202:Core/Src/bme280.c ****   var2 = var2 + var1 * dev->calib.dig_P5 * 2.0f;
+ 153              		.loc 1 202 3 is_stmt 1 view .LVU38
+ 154              		.loc 1 202 34 is_stmt 0 view .LVU39
+ 155 003c B0F91430 		ldrsh	r3, [r0, #20]
+ 156 0040 07EE903A 		vmov	s15, r3	@ int
+ 157              		.loc 1 202 22 view .LVU40
+ 158 0044 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 159 0048 67EEA67A 		vmul.f32	s15, s15, s13
+ 160              		.loc 1 202 42 view .LVU41
+ 161 004c 77EEA77A 		vadd.f32	s15, s15, s15
+ 162              		.loc 1 202 8 view .LVU42
+ 163 0050 77EE877A 		vadd.f32	s15, s15, s14
+ 164              	.LVL9:
+ 203:Core/Src/bme280.c ****   var2 = (var2 / 4.0f) + (dev->calib.dig_P4 * 65536.0f);
+ 165              		.loc 1 203 3 is_stmt 1 view .LVU43
+ 166              		.loc 1 203 16 is_stmt 0 view .LVU44
+ 167 0054 B5EE007A 		vmov.f32	s14, #2.5e-1
+ 168 0058 67EE877A 		vmul.f32	s15, s15, s14
+ 169              	.LVL10:
+ 170              		.loc 1 203 37 view .LVU45
+ 171 005c B0F91230 		ldrsh	r3, [r0, #18]
+ 172              	.LVL11:
+ 173              		.loc 1 203 37 view .LVU46
+ 174 0060 07EE103A 		vmov	s14, r3	@ int
+ 175              		.loc 1 203 45 view .LVU47
+ 176 0064 B8EEC77A 		vcvt.f32.s32	s14, s14
+ 177 0068 9FED3C6A 		vldr.32	s12, .L10+8
+ 178 006c 27EE067A 		vmul.f32	s14, s14, s12
+ 179              		.loc 1 203 8 view .LVU48
+ 180 0070 37EE877A 		vadd.f32	s14, s15, s14
+ 181              	.LVL12:
+ 204:Core/Src/bme280.c ****   var1 = ((dev->calib.dig_P3 * var1 * var1 / 524288.0f) +
+ 182              		.loc 1 204 3 is_stmt 1 view .LVU49
+ 183              		.loc 1 204 22 is_stmt 0 view .LVU50
+ 184 0074 B0F91030 		ldrsh	r3, [r0, #16]
+ 185 0078 07EE903A 		vmov	s15, r3	@ int
+ 186              		.loc 1 204 30 view .LVU51
+ 187 007c F8EEE77A 		vcvt.f32.s32	s15, s15
+ 188 0080 67EEA67A 		vmul.f32	s15, s15, s13
+ 189              		.loc 1 204 37 view .LVU52
+ 190 0084 67EEA67A 		vmul.f32	s15, s15, s13
+ 191              		.loc 1 204 44 view .LVU53
+ 192 0088 9FED355A 		vldr.32	s10, .L10+12
+ 193 008c 67EE857A 		vmul.f32	s15, s15, s10
+ 205:Core/Src/bme280.c ****           (dev->calib.dig_P2 * var1)) /
+ 194              		.loc 1 205 22 view .LVU54
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 8
+
+
+ 195 0090 B0F90E30 		ldrsh	r3, [r0, #14]
+ 196 0094 06EE103A 		vmov	s12, r3	@ int
+ 197              		.loc 1 205 30 view .LVU55
+ 198 0098 B8EEC66A 		vcvt.f32.s32	s12, s12
+ 199 009c 66EE266A 		vmul.f32	s13, s12, s13
+ 200              	.LVL13:
+ 204:Core/Src/bme280.c ****   var1 = ((dev->calib.dig_P3 * var1 * var1 / 524288.0f) +
+ 201              		.loc 1 204 57 view .LVU56
+ 202 00a0 77EEA67A 		vadd.f32	s15, s15, s13
+ 204:Core/Src/bme280.c ****   var1 = ((dev->calib.dig_P3 * var1 * var1 / 524288.0f) +
+ 203              		.loc 1 204 8 view .LVU57
+ 204 00a4 67EE857A 		vmul.f32	s15, s15, s10
+ 205              	.LVL14:
+ 206:Core/Src/bme280.c ****              524288.0f;
+ 207:Core/Src/bme280.c ****   var1 = (1.0f + var1 / 32768.0f) * dev->calib.dig_P1;
+ 206              		.loc 1 207 3 is_stmt 1 view .LVU58
+ 207              		.loc 1 207 23 is_stmt 0 view .LVU59
+ 208 00a8 67EEA57A 		vmul.f32	s15, s15, s11
+ 209              	.LVL15:
+ 210              		.loc 1 207 16 view .LVU60
+ 211 00ac F7EE006A 		vmov.f32	s13, #1.0e+0
+ 212              	.LVL16:
+ 213              		.loc 1 207 16 view .LVU61
+ 214 00b0 77EEA67A 		vadd.f32	s15, s15, s13
+ 215              		.loc 1 207 47 view .LVU62
+ 216 00b4 8389     		ldrh	r3, [r0, #12]
+ 217 00b6 06EE903A 		vmov	s13, r3	@ int
+ 218              		.loc 1 207 35 view .LVU63
+ 219 00ba F8EEE66A 		vcvt.f32.s32	s13, s13
+ 220              		.loc 1 207 8 view .LVU64
+ 221 00be 67EEA67A 		vmul.f32	s15, s15, s13
+ 222              	.LVL17:
+ 208:Core/Src/bme280.c **** 
+ 209:Core/Src/bme280.c ****   if (var1 == 0.0f)
+ 223              		.loc 1 209 3 is_stmt 1 view .LVU65
+ 224              		.loc 1 209 6 is_stmt 0 view .LVU66
+ 225 00c2 F5EE407A 		vcmp.f32	s15, #0
+ 226 00c6 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 227 00ca 3FD0     		beq	.L9
+ 210:Core/Src/bme280.c ****   {
+ 211:Core/Src/bme280.c ****     return 0.0f;
+ 212:Core/Src/bme280.c ****   }
+ 213:Core/Src/bme280.c **** 
+ 214:Core/Src/bme280.c ****   float p = 1048576.0f - (float)adc_P;
+ 228              		.loc 1 214 3 is_stmt 1 view .LVU67
+ 229              		.loc 1 214 26 is_stmt 0 view .LVU68
+ 230 00cc 06EE901A 		vmov	s13, r1	@ int
+ 231 00d0 F8EEE66A 		vcvt.f32.s32	s13, s13
+ 232              		.loc 1 214 9 view .LVU69
+ 233 00d4 9FED236A 		vldr.32	s12, .L10+16
+ 234 00d8 76EE666A 		vsub.f32	s13, s12, s13
+ 235              	.LVL18:
+ 215:Core/Src/bme280.c ****   p = (p - (var2 / 4096.0f)) * 6250.0f / var1;
+ 236              		.loc 1 215 3 is_stmt 1 view .LVU70
+ 237              		.loc 1 215 18 is_stmt 0 view .LVU71
+ 238 00dc 9FED226A 		vldr.32	s12, .L10+20
+ 239 00e0 27EE067A 		vmul.f32	s14, s14, s12
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 9
+
+
+ 240              	.LVL19:
+ 241              		.loc 1 215 10 view .LVU72
+ 242 00e4 36EEC77A 		vsub.f32	s14, s13, s14
+ 243              		.loc 1 215 30 view .LVU73
+ 244 00e8 DFED206A 		vldr.32	s13, .L10+24
+ 245              	.LVL20:
+ 246              		.loc 1 215 30 view .LVU74
+ 247 00ec 27EE267A 		vmul.f32	s14, s14, s13
+ 248              		.loc 1 215 5 view .LVU75
+ 249 00f0 C7EE276A 		vdiv.f32	s13, s14, s15
+ 250              	.LVL21:
+ 216:Core/Src/bme280.c ****   var1 = dev->calib.dig_P9 * p * p / 2147483648.0f;
+ 251              		.loc 1 216 3 is_stmt 1 view .LVU76
+ 252              		.loc 1 216 20 is_stmt 0 view .LVU77
+ 253 00f4 B0F91C30 		ldrsh	r3, [r0, #28]
+ 254 00f8 07EE903A 		vmov	s15, r3	@ int
+ 255              	.LVL22:
+ 256              		.loc 1 216 28 view .LVU78
+ 257 00fc F8EEE77A 		vcvt.f32.s32	s15, s15
+ 258 0100 67EEA67A 		vmul.f32	s15, s15, s13
+ 259              		.loc 1 216 32 view .LVU79
+ 260 0104 67EEA67A 		vmul.f32	s15, s15, s13
+ 261              		.loc 1 216 8 view .LVU80
+ 262 0108 9FED197A 		vldr.32	s14, .L10+28
+ 263 010c 67EE877A 		vmul.f32	s15, s15, s14
+ 264              	.LVL23:
+ 217:Core/Src/bme280.c ****   var2 = p * dev->calib.dig_P8 / 32768.0f;
+ 265              		.loc 1 217 3 is_stmt 1 view .LVU81
+ 266              		.loc 1 217 24 is_stmt 0 view .LVU82
+ 267 0110 B0F91A30 		ldrsh	r3, [r0, #26]
+ 268 0114 07EE103A 		vmov	s14, r3	@ int
+ 269              		.loc 1 217 12 view .LVU83
+ 270 0118 B8EEC77A 		vcvt.f32.s32	s14, s14
+ 271 011c 27EE267A 		vmul.f32	s14, s14, s13
+ 272              		.loc 1 217 8 view .LVU84
+ 273 0120 27EE257A 		vmul.f32	s14, s14, s11
+ 274              	.LVL24:
+ 218:Core/Src/bme280.c ****   p = p + (var1 + var2 + dev->calib.dig_P7) / 16.0f;
+ 275              		.loc 1 218 3 is_stmt 1 view .LVU85
+ 276              		.loc 1 218 17 is_stmt 0 view .LVU86
+ 277 0124 77EE877A 		vadd.f32	s15, s15, s14
+ 278              	.LVL25:
+ 279              		.loc 1 218 36 view .LVU87
+ 280 0128 B0F91830 		ldrsh	r3, [r0, #24]
+ 281 012c 00EE103A 		vmov	s0, r3	@ int
+ 282              		.loc 1 218 24 view .LVU88
+ 283 0130 B8EEC00A 		vcvt.f32.s32	s0, s0
+ 284 0134 30EE270A 		vadd.f32	s0, s0, s15
+ 285              		.loc 1 218 45 view .LVU89
+ 286 0138 DFED0E7A 		vldr.32	s15, .L10+32
+ 287 013c 20EE270A 		vmul.f32	s0, s0, s15
+ 288              		.loc 1 218 5 view .LVU90
+ 289 0140 30EE260A 		vadd.f32	s0, s0, s13
+ 290              	.LVL26:
+ 219:Core/Src/bme280.c **** 
+ 220:Core/Src/bme280.c ****   return p;
+ 291              		.loc 1 220 3 is_stmt 1 view .LVU91
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 10
+
+
+ 292              		.loc 1 220 10 is_stmt 0 view .LVU92
+ 293 0144 7047     		bx	lr
+ 294              	.LVL27:
+ 295              	.L8:
+ 197:Core/Src/bme280.c ****   }
+ 296              		.loc 1 197 12 view .LVU93
+ 297 0146 9FED0C0A 		vldr.32	s0, .L10+36
+ 298 014a 7047     		bx	lr
+ 299              	.LVL28:
+ 300              	.L9:
+ 211:Core/Src/bme280.c ****   }
+ 301              		.loc 1 211 12 view .LVU94
+ 302 014c 9FED0A0A 		vldr.32	s0, .L10+36
+ 221:Core/Src/bme280.c **** }
+ 303              		.loc 1 221 1 view .LVU95
+ 304 0150 7047     		bx	lr
+ 305              	.L11:
+ 306 0152 00BF     		.align	2
+ 307              	.L10:
+ 308 0154 00007A47 		.word	1199177728
+ 309 0158 00000038 		.word	939524096
+ 310 015c 00008047 		.word	1199570944
+ 311 0160 00000036 		.word	905969664
+ 312 0164 00008049 		.word	1233125376
+ 313 0168 00008039 		.word	964689920
+ 314 016c 0050C345 		.word	1170427904
+ 315 0170 00000030 		.word	805306368
+ 316 0174 0000803D 		.word	1031798784
+ 317 0178 00000000 		.word	0
+ 318              		.cfi_endproc
+ 319              	.LFE141:
+ 321              		.section	.text.bme280_compensate_humidity,"ax",%progbits
+ 322              		.align	1
+ 323              		.syntax unified
+ 324              		.thumb
+ 325              		.thumb_func
+ 327              	bme280_compensate_humidity:
+ 328              	.LVL29:
+ 329              	.LFB142:
+ 222:Core/Src/bme280.c **** 
+ 223:Core/Src/bme280.c **** static float bme280_compensate_humidity(const BME280_Handle_t *dev, int32_t adc_H)
+ 224:Core/Src/bme280.c **** {
+ 330              		.loc 1 224 1 is_stmt 1 view -0
+ 331              		.cfi_startproc
+ 332              		@ args = 0, pretend = 0, frame = 0
+ 333              		@ frame_needed = 0, uses_anonymous_args = 0
+ 334              		@ link register save eliminated.
+ 335              		.loc 1 224 1 is_stmt 0 view .LVU97
+ 336 0000 07EE901A 		vmov	s15, r1	@ int
+ 225:Core/Src/bme280.c ****   float var1 = dev->t_fine - 76800.0f;
+ 337              		.loc 1 225 3 is_stmt 1 view .LVU98
+ 338              		.loc 1 225 28 is_stmt 0 view .LVU99
+ 339 0004 90ED0B7A 		vldr.32	s14, [r0, #44]	@ int
+ 340 0008 F8EEC75A 		vcvt.f32.s32	s11, s14
+ 341              		.loc 1 225 9 view .LVU100
+ 342 000c 9FED367A 		vldr.32	s14, .L17
+ 343 0010 75EEC75A 		vsub.f32	s11, s11, s14
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 11
+
+
+ 344              	.LVL30:
+ 226:Core/Src/bme280.c ****   float var2 = (adc_H - (dev->calib.dig_H4 * 64.0f + dev->calib.dig_H5 / 16384.0f * var1)) *
+ 345              		.loc 1 226 3 is_stmt 1 view .LVU101
+ 346              		.loc 1 226 36 is_stmt 0 view .LVU102
+ 347 0014 B0F92430 		ldrsh	r3, [r0, #36]
+ 348 0018 07EE103A 		vmov	s14, r3	@ int
+ 349              		.loc 1 226 44 view .LVU103
+ 350 001c B8EEC77A 		vcvt.f32.s32	s14, s14
+ 351 0020 DFED326A 		vldr.32	s13, .L17+4
+ 352 0024 27EE267A 		vmul.f32	s14, s14, s13
+ 353              		.loc 1 226 64 view .LVU104
+ 354 0028 B0F92630 		ldrsh	r3, [r0, #38]
+ 355 002c 06EE903A 		vmov	s13, r3	@ int
+ 356              		.loc 1 226 72 view .LVU105
+ 357 0030 F8EEE66A 		vcvt.f32.s32	s13, s13
+ 358 0034 9FED2E6A 		vldr.32	s12, .L17+8
+ 359 0038 66EE866A 		vmul.f32	s13, s13, s12
+ 360              		.loc 1 226 83 view .LVU106
+ 361 003c 66EEA56A 		vmul.f32	s13, s13, s11
+ 362              		.loc 1 226 52 view .LVU107
+ 363 0040 37EE267A 		vadd.f32	s14, s14, s13
+ 364              		.loc 1 226 23 view .LVU108
+ 365 0044 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 366 0048 77EEC76A 		vsub.f32	s13, s15, s14
+ 227:Core/Src/bme280.c ****                (dev->calib.dig_H2 / 65536.0f * (1.0f + dev->calib.dig_H6 / 67108864.0f * var1 * (1.
+ 367              		.loc 1 227 27 view .LVU109
+ 368 004c B0F92030 		ldrsh	r3, [r0, #32]
+ 369 0050 07EE903A 		vmov	s15, r3	@ int
+ 370              		.loc 1 227 35 view .LVU110
+ 371 0054 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 372 0058 9FED267A 		vldr.32	s14, .L17+12
+ 373 005c 27EE876A 		vmul.f32	s12, s15, s14
+ 374              		.loc 1 227 66 view .LVU111
+ 375 0060 90F92830 		ldrsb	r3, [r0, #40]
+ 376 0064 07EE903A 		vmov	s15, r3	@ int
+ 377              		.loc 1 227 74 view .LVU112
+ 378 0068 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 379 006c 9FED225A 		vldr.32	s10, .L17+16
+ 380 0070 67EE857A 		vmul.f32	s15, s15, s10
+ 381              		.loc 1 227 88 view .LVU113
+ 382 0074 67EEA57A 		vmul.f32	s15, s15, s11
+ 383              		.loc 1 227 115 view .LVU114
+ 384 0078 90F82230 		ldrb	r3, [r0, #34]	@ zero_extendqisi2
+ 385 007c 07EE103A 		vmov	s14, r3	@ int
+ 386              		.loc 1 227 123 view .LVU115
+ 387 0080 B8EEC77A 		vcvt.f32.s32	s14, s14
+ 388 0084 27EE057A 		vmul.f32	s14, s14, s10
+ 389              		.loc 1 227 137 view .LVU116
+ 390 0088 27EE257A 		vmul.f32	s14, s14, s11
+ 391              		.loc 1 227 103 view .LVU117
+ 392 008c B7EE000A 		vmov.f32	s0, #1.0e+0
+ 393 0090 37EE007A 		vadd.f32	s14, s14, s0
+ 394              		.loc 1 227 95 view .LVU118
+ 395 0094 67EE877A 		vmul.f32	s15, s15, s14
+ 396              		.loc 1 227 54 view .LVU119
+ 397 0098 77EE807A 		vadd.f32	s15, s15, s0
+ 398              		.loc 1 227 46 view .LVU120
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 12
+
+
+ 399 009c 66EE277A 		vmul.f32	s15, s12, s15
+ 226:Core/Src/bme280.c ****   float var2 = (adc_H - (dev->calib.dig_H4 * 64.0f + dev->calib.dig_H5 / 16384.0f * var1)) *
+ 400              		.loc 1 226 9 view .LVU121
+ 401 00a0 66EEA77A 		vmul.f32	s15, s13, s15
+ 402              	.LVL31:
+ 228:Core/Src/bme280.c ****   float var3 = var2 * (1.0f - dev->calib.dig_H1 * var2 / 524288.0f);
+ 403              		.loc 1 228 3 is_stmt 1 view .LVU122
+ 404              		.loc 1 228 41 is_stmt 0 view .LVU123
+ 405 00a4 837F     		ldrb	r3, [r0, #30]	@ zero_extendqisi2
+ 406 00a6 07EE103A 		vmov	s14, r3	@ int
+ 407              		.loc 1 228 49 view .LVU124
+ 408 00aa B8EEC77A 		vcvt.f32.s32	s14, s14
+ 409 00ae 27EE277A 		vmul.f32	s14, s14, s15
+ 410              		.loc 1 228 56 view .LVU125
+ 411 00b2 DFED126A 		vldr.32	s13, .L17+20
+ 412 00b6 27EE267A 		vmul.f32	s14, s14, s13
+ 413              		.loc 1 228 29 view .LVU126
+ 414 00ba 30EE470A 		vsub.f32	s0, s0, s14
+ 415              		.loc 1 228 9 view .LVU127
+ 416 00be 20EE270A 		vmul.f32	s0, s0, s15
+ 417              	.LVL32:
+ 229:Core/Src/bme280.c ****   if (var3 > 100.0f)
+ 418              		.loc 1 229 3 is_stmt 1 view .LVU128
+ 419              		.loc 1 229 6 is_stmt 0 view .LVU129
+ 420 00c2 DFED0F7A 		vldr.32	s15, .L17+24
+ 421              	.LVL33:
+ 422              		.loc 1 229 6 view .LVU130
+ 423 00c6 B4EEE70A 		vcmpe.f32	s0, s15
+ 424 00ca F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 425 00ce 05DC     		bgt	.L14
+ 230:Core/Src/bme280.c ****   {
+ 231:Core/Src/bme280.c ****     var3 = 100.0f;
+ 232:Core/Src/bme280.c ****   }
+ 233:Core/Src/bme280.c ****   else if (var3 < 0.0f)
+ 426              		.loc 1 233 8 is_stmt 1 view .LVU131
+ 427              		.loc 1 233 11 is_stmt 0 view .LVU132
+ 428 00d0 B5EEC00A 		vcmpe.f32	s0, #0
+ 429 00d4 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 430 00d8 03D4     		bmi	.L16
+ 431              	.LVL34:
+ 432              	.L12:
+ 234:Core/Src/bme280.c ****   {
+ 235:Core/Src/bme280.c ****     var3 = 0.0f;
+ 236:Core/Src/bme280.c ****   }
+ 237:Core/Src/bme280.c ****   return var3;
+ 238:Core/Src/bme280.c **** }
+ 433              		.loc 1 238 1 view .LVU133
+ 434 00da 7047     		bx	lr
+ 435              	.LVL35:
+ 436              	.L14:
+ 231:Core/Src/bme280.c ****   }
+ 437              		.loc 1 231 10 view .LVU134
+ 438 00dc 9FED080A 		vldr.32	s0, .L17+24
+ 439              	.LVL36:
+ 231:Core/Src/bme280.c ****   }
+ 440              		.loc 1 231 10 view .LVU135
+ 441 00e0 7047     		bx	lr
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 13
+
+
+ 442              	.LVL37:
+ 443              	.L16:
+ 235:Core/Src/bme280.c ****   }
+ 444              		.loc 1 235 10 view .LVU136
+ 445 00e2 9FED080A 		vldr.32	s0, .L17+28
+ 446              	.LVL38:
+ 237:Core/Src/bme280.c **** }
+ 447              		.loc 1 237 3 is_stmt 1 view .LVU137
+ 237:Core/Src/bme280.c **** }
+ 448              		.loc 1 237 10 is_stmt 0 view .LVU138
+ 449 00e6 F8E7     		b	.L12
+ 450              	.L18:
+ 451              		.align	2
+ 452              	.L17:
+ 453 00e8 00009647 		.word	1201012736
+ 454 00ec 00008042 		.word	1115684864
+ 455 00f0 00008038 		.word	947912704
+ 456 00f4 00008037 		.word	931135488
+ 457 00f8 00008032 		.word	847249408
+ 458 00fc 00000036 		.word	905969664
+ 459 0100 0000C842 		.word	1120403456
+ 460 0104 00000000 		.word	0
+ 461              		.cfi_endproc
+ 462              	.LFE142:
+ 464              		.section	.text.bme280_read8,"ax",%progbits
+ 465              		.align	1
+ 466              		.syntax unified
+ 467              		.thumb
+ 468              		.thumb_func
+ 470              	bme280_read8:
+ 471              	.LVL39:
+ 472              	.LFB138:
+ 168:Core/Src/bme280.c ****   return HAL_I2C_Mem_Read(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, value, 1U, BME280_TIME
+ 473              		.loc 1 168 1 is_stmt 1 view -0
+ 474              		.cfi_startproc
+ 475              		@ args = 0, pretend = 0, frame = 0
+ 476              		@ frame_needed = 0, uses_anonymous_args = 0
+ 168:Core/Src/bme280.c ****   return HAL_I2C_Mem_Read(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, value, 1U, BME280_TIME
+ 477              		.loc 1 168 1 is_stmt 0 view .LVU140
+ 478 0000 00B5     		push	{lr}
+ 479              	.LCFI0:
+ 480              		.cfi_def_cfa_offset 4
+ 481              		.cfi_offset 14, -4
+ 482 0002 85B0     		sub	sp, sp, #20
+ 483              	.LCFI1:
+ 484              		.cfi_def_cfa_offset 24
+ 169:Core/Src/bme280.c **** }
+ 485              		.loc 1 169 3 is_stmt 1 view .LVU141
+ 169:Core/Src/bme280.c **** }
+ 486              		.loc 1 169 10 is_stmt 0 view .LVU142
+ 487 0004 6423     		movs	r3, #100
+ 488 0006 0293     		str	r3, [sp, #8]
+ 489 0008 0123     		movs	r3, #1
+ 490 000a 0193     		str	r3, [sp, #4]
+ 491 000c 0092     		str	r2, [sp]
+ 492 000e 0A46     		mov	r2, r1
+ 493              	.LVL40:
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 14
+
+
+ 169:Core/Src/bme280.c **** }
+ 494              		.loc 1 169 10 view .LVU143
+ 495 0010 0179     		ldrb	r1, [r0, #4]	@ zero_extendqisi2
+ 496              	.LVL41:
+ 169:Core/Src/bme280.c **** }
+ 497              		.loc 1 169 10 view .LVU144
+ 498 0012 0068     		ldr	r0, [r0]
+ 499              	.LVL42:
+ 169:Core/Src/bme280.c **** }
+ 500              		.loc 1 169 10 view .LVU145
+ 501 0014 FFF7FEFF 		bl	HAL_I2C_Mem_Read
+ 502              	.LVL43:
+ 170:Core/Src/bme280.c **** 
+ 503              		.loc 1 170 1 view .LVU146
+ 504 0018 05B0     		add	sp, sp, #20
+ 505              	.LCFI2:
+ 506              		.cfi_def_cfa_offset 4
+ 507              		@ sp needed
+ 508 001a 5DF804FB 		ldr	pc, [sp], #4
+ 509              		.cfi_endproc
+ 510              	.LFE138:
+ 512              		.section	.text.bme280_read_block,"ax",%progbits
+ 513              		.align	1
+ 514              		.syntax unified
+ 515              		.thumb
+ 516              		.thumb_func
+ 518              	bme280_read_block:
+ 519              	.LVL44:
+ 520              	.LFB139:
+ 173:Core/Src/bme280.c ****   return HAL_I2C_Mem_Read(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, buf, len, BME280_TIMEO
+ 521              		.loc 1 173 1 is_stmt 1 view -0
+ 522              		.cfi_startproc
+ 523              		@ args = 0, pretend = 0, frame = 0
+ 524              		@ frame_needed = 0, uses_anonymous_args = 0
+ 173:Core/Src/bme280.c ****   return HAL_I2C_Mem_Read(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, buf, len, BME280_TIMEO
+ 525              		.loc 1 173 1 is_stmt 0 view .LVU148
+ 526 0000 10B5     		push	{r4, lr}
+ 527              	.LCFI3:
+ 528              		.cfi_def_cfa_offset 8
+ 529              		.cfi_offset 4, -8
+ 530              		.cfi_offset 14, -4
+ 531 0002 84B0     		sub	sp, sp, #16
+ 532              	.LCFI4:
+ 533              		.cfi_def_cfa_offset 24
+ 174:Core/Src/bme280.c **** }
+ 534              		.loc 1 174 3 is_stmt 1 view .LVU149
+ 174:Core/Src/bme280.c **** }
+ 535              		.loc 1 174 10 is_stmt 0 view .LVU150
+ 536 0004 6424     		movs	r4, #100
+ 537 0006 0294     		str	r4, [sp, #8]
+ 538 0008 0193     		str	r3, [sp, #4]
+ 539 000a 0092     		str	r2, [sp]
+ 540 000c 0123     		movs	r3, #1
+ 541              	.LVL45:
+ 174:Core/Src/bme280.c **** }
+ 542              		.loc 1 174 10 view .LVU151
+ 543 000e 0A46     		mov	r2, r1
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 15
+
+
+ 544              	.LVL46:
+ 174:Core/Src/bme280.c **** }
+ 545              		.loc 1 174 10 view .LVU152
+ 546 0010 0179     		ldrb	r1, [r0, #4]	@ zero_extendqisi2
+ 547              	.LVL47:
+ 174:Core/Src/bme280.c **** }
+ 548              		.loc 1 174 10 view .LVU153
+ 549 0012 0068     		ldr	r0, [r0]
+ 550              	.LVL48:
+ 174:Core/Src/bme280.c **** }
+ 551              		.loc 1 174 10 view .LVU154
+ 552 0014 FFF7FEFF 		bl	HAL_I2C_Mem_Read
+ 553              	.LVL49:
+ 175:Core/Src/bme280.c **** 
+ 554              		.loc 1 175 1 view .LVU155
+ 555 0018 04B0     		add	sp, sp, #16
+ 556              	.LCFI5:
+ 557              		.cfi_def_cfa_offset 8
+ 558              		@ sp needed
+ 559 001a 10BD     		pop	{r4, pc}
+ 560              		.cfi_endproc
+ 561              	.LFE139:
+ 563              		.section	.text.bme280_read_calibration,"ax",%progbits
+ 564              		.align	1
+ 565              		.syntax unified
+ 566              		.thumb
+ 567              		.thumb_func
+ 569              	bme280_read_calibration:
+ 570              	.LVL50:
+ 571              	.LFB136:
+ 124:Core/Src/bme280.c ****   uint8_t buf1[26];
+ 572              		.loc 1 124 1 is_stmt 1 view -0
+ 573              		.cfi_startproc
+ 574              		@ args = 0, pretend = 0, frame = 40
+ 575              		@ frame_needed = 0, uses_anonymous_args = 0
+ 124:Core/Src/bme280.c ****   uint8_t buf1[26];
+ 576              		.loc 1 124 1 is_stmt 0 view .LVU157
+ 577 0000 10B5     		push	{r4, lr}
+ 578              	.LCFI6:
+ 579              		.cfi_def_cfa_offset 8
+ 580              		.cfi_offset 4, -8
+ 581              		.cfi_offset 14, -4
+ 582 0002 8AB0     		sub	sp, sp, #40
+ 583              	.LCFI7:
+ 584              		.cfi_def_cfa_offset 48
+ 585 0004 0446     		mov	r4, r0
+ 125:Core/Src/bme280.c ****   HAL_StatusTypeDef status = bme280_read_block(dev, 0x88U, buf1, sizeof(buf1));
+ 586              		.loc 1 125 3 is_stmt 1 view .LVU158
+ 126:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 587              		.loc 1 126 3 view .LVU159
+ 126:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 588              		.loc 1 126 30 is_stmt 0 view .LVU160
+ 589 0006 1A23     		movs	r3, #26
+ 590 0008 03AA     		add	r2, sp, #12
+ 591 000a 8821     		movs	r1, #136
+ 592 000c FFF7FEFF 		bl	bme280_read_block
+ 593              	.LVL51:
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 16
+
+
+ 127:Core/Src/bme280.c ****   {
+ 594              		.loc 1 127 3 is_stmt 1 view .LVU161
+ 127:Core/Src/bme280.c ****   {
+ 595              		.loc 1 127 6 is_stmt 0 view .LVU162
+ 596 0010 08B1     		cbz	r0, .L26
+ 597              	.LVL52:
+ 598              	.L24:
+ 160:Core/Src/bme280.c **** 
+ 599              		.loc 1 160 1 view .LVU163
+ 600 0012 0AB0     		add	sp, sp, #40
+ 601              	.LCFI8:
+ 602              		.cfi_remember_state
+ 603              		.cfi_def_cfa_offset 8
+ 604              		@ sp needed
+ 605 0014 10BD     		pop	{r4, pc}
+ 606              	.LVL53:
+ 607              	.L26:
+ 608              	.LCFI9:
+ 609              		.cfi_restore_state
+ 132:Core/Src/bme280.c ****   dev->calib.dig_T2 = (int16_t)((buf1[3] << 8) | buf1[2]);
+ 610              		.loc 1 132 3 is_stmt 1 view .LVU164
+ 132:Core/Src/bme280.c ****   dev->calib.dig_T2 = (int16_t)((buf1[3] << 8) | buf1[2]);
+ 611              		.loc 1 132 39 is_stmt 0 view .LVU165
+ 612 0016 9DF80D20 		ldrb	r2, [sp, #13]	@ zero_extendqisi2
+ 132:Core/Src/bme280.c ****   dev->calib.dig_T2 = (int16_t)((buf1[3] << 8) | buf1[2]);
+ 613              		.loc 1 132 55 view .LVU166
+ 614 001a 9DF80C30 		ldrb	r3, [sp, #12]	@ zero_extendqisi2
+ 132:Core/Src/bme280.c ****   dev->calib.dig_T2 = (int16_t)((buf1[3] << 8) | buf1[2]);
+ 615              		.loc 1 132 23 view .LVU167
+ 616 001e 43EA0223 		orr	r3, r3, r2, lsl #8
+ 132:Core/Src/bme280.c ****   dev->calib.dig_T2 = (int16_t)((buf1[3] << 8) | buf1[2]);
+ 617              		.loc 1 132 21 view .LVU168
+ 618 0022 E380     		strh	r3, [r4, #6]	@ movhi
+ 133:Core/Src/bme280.c ****   dev->calib.dig_T3 = (int16_t)((buf1[5] << 8) | buf1[4]);
+ 619              		.loc 1 133 3 is_stmt 1 view .LVU169
+ 133:Core/Src/bme280.c ****   dev->calib.dig_T3 = (int16_t)((buf1[5] << 8) | buf1[4]);
+ 620              		.loc 1 133 38 is_stmt 0 view .LVU170
+ 621 0024 9DF80F20 		ldrb	r2, [sp, #15]	@ zero_extendqisi2
+ 133:Core/Src/bme280.c ****   dev->calib.dig_T3 = (int16_t)((buf1[5] << 8) | buf1[4]);
+ 622              		.loc 1 133 54 view .LVU171
+ 623 0028 9DF80E30 		ldrb	r3, [sp, #14]	@ zero_extendqisi2
+ 133:Core/Src/bme280.c ****   dev->calib.dig_T3 = (int16_t)((buf1[5] << 8) | buf1[4]);
+ 624              		.loc 1 133 23 view .LVU172
+ 625 002c 43EA0223 		orr	r3, r3, r2, lsl #8
+ 133:Core/Src/bme280.c ****   dev->calib.dig_T3 = (int16_t)((buf1[5] << 8) | buf1[4]);
+ 626              		.loc 1 133 21 view .LVU173
+ 627 0030 2381     		strh	r3, [r4, #8]	@ movhi
+ 134:Core/Src/bme280.c ****   dev->calib.dig_P1 = (uint16_t)((buf1[7] << 8) | buf1[6]);
+ 628              		.loc 1 134 3 is_stmt 1 view .LVU174
+ 134:Core/Src/bme280.c ****   dev->calib.dig_P1 = (uint16_t)((buf1[7] << 8) | buf1[6]);
+ 629              		.loc 1 134 38 is_stmt 0 view .LVU175
+ 630 0032 9DF81120 		ldrb	r2, [sp, #17]	@ zero_extendqisi2
+ 134:Core/Src/bme280.c ****   dev->calib.dig_P1 = (uint16_t)((buf1[7] << 8) | buf1[6]);
+ 631              		.loc 1 134 54 view .LVU176
+ 632 0036 9DF81030 		ldrb	r3, [sp, #16]	@ zero_extendqisi2
+ 134:Core/Src/bme280.c ****   dev->calib.dig_P1 = (uint16_t)((buf1[7] << 8) | buf1[6]);
+ 633              		.loc 1 134 23 view .LVU177
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 17
+
+
+ 634 003a 43EA0223 		orr	r3, r3, r2, lsl #8
+ 134:Core/Src/bme280.c ****   dev->calib.dig_P1 = (uint16_t)((buf1[7] << 8) | buf1[6]);
+ 635              		.loc 1 134 21 view .LVU178
+ 636 003e 6381     		strh	r3, [r4, #10]	@ movhi
+ 135:Core/Src/bme280.c ****   dev->calib.dig_P2 = (int16_t)((buf1[9] << 8) | buf1[8]);
+ 637              		.loc 1 135 3 is_stmt 1 view .LVU179
+ 135:Core/Src/bme280.c ****   dev->calib.dig_P2 = (int16_t)((buf1[9] << 8) | buf1[8]);
+ 638              		.loc 1 135 39 is_stmt 0 view .LVU180
+ 639 0040 9DF81320 		ldrb	r2, [sp, #19]	@ zero_extendqisi2
+ 135:Core/Src/bme280.c ****   dev->calib.dig_P2 = (int16_t)((buf1[9] << 8) | buf1[8]);
+ 640              		.loc 1 135 55 view .LVU181
+ 641 0044 9DF81230 		ldrb	r3, [sp, #18]	@ zero_extendqisi2
+ 135:Core/Src/bme280.c ****   dev->calib.dig_P2 = (int16_t)((buf1[9] << 8) | buf1[8]);
+ 642              		.loc 1 135 23 view .LVU182
+ 643 0048 43EA0223 		orr	r3, r3, r2, lsl #8
+ 135:Core/Src/bme280.c ****   dev->calib.dig_P2 = (int16_t)((buf1[9] << 8) | buf1[8]);
+ 644              		.loc 1 135 21 view .LVU183
+ 645 004c A381     		strh	r3, [r4, #12]	@ movhi
+ 136:Core/Src/bme280.c ****   dev->calib.dig_P3 = (int16_t)((buf1[11] << 8) | buf1[10]);
+ 646              		.loc 1 136 3 is_stmt 1 view .LVU184
+ 136:Core/Src/bme280.c ****   dev->calib.dig_P3 = (int16_t)((buf1[11] << 8) | buf1[10]);
+ 647              		.loc 1 136 38 is_stmt 0 view .LVU185
+ 648 004e 9DF81520 		ldrb	r2, [sp, #21]	@ zero_extendqisi2
+ 136:Core/Src/bme280.c ****   dev->calib.dig_P3 = (int16_t)((buf1[11] << 8) | buf1[10]);
+ 649              		.loc 1 136 54 view .LVU186
+ 650 0052 9DF81430 		ldrb	r3, [sp, #20]	@ zero_extendqisi2
+ 136:Core/Src/bme280.c ****   dev->calib.dig_P3 = (int16_t)((buf1[11] << 8) | buf1[10]);
+ 651              		.loc 1 136 23 view .LVU187
+ 652 0056 43EA0223 		orr	r3, r3, r2, lsl #8
+ 136:Core/Src/bme280.c ****   dev->calib.dig_P3 = (int16_t)((buf1[11] << 8) | buf1[10]);
+ 653              		.loc 1 136 21 view .LVU188
+ 654 005a E381     		strh	r3, [r4, #14]	@ movhi
+ 137:Core/Src/bme280.c ****   dev->calib.dig_P4 = (int16_t)((buf1[13] << 8) | buf1[12]);
+ 655              		.loc 1 137 3 is_stmt 1 view .LVU189
+ 137:Core/Src/bme280.c ****   dev->calib.dig_P4 = (int16_t)((buf1[13] << 8) | buf1[12]);
+ 656              		.loc 1 137 38 is_stmt 0 view .LVU190
+ 657 005c 9DF81720 		ldrb	r2, [sp, #23]	@ zero_extendqisi2
+ 137:Core/Src/bme280.c ****   dev->calib.dig_P4 = (int16_t)((buf1[13] << 8) | buf1[12]);
+ 658              		.loc 1 137 55 view .LVU191
+ 659 0060 9DF81630 		ldrb	r3, [sp, #22]	@ zero_extendqisi2
+ 137:Core/Src/bme280.c ****   dev->calib.dig_P4 = (int16_t)((buf1[13] << 8) | buf1[12]);
+ 660              		.loc 1 137 23 view .LVU192
+ 661 0064 43EA0223 		orr	r3, r3, r2, lsl #8
+ 137:Core/Src/bme280.c ****   dev->calib.dig_P4 = (int16_t)((buf1[13] << 8) | buf1[12]);
+ 662              		.loc 1 137 21 view .LVU193
+ 663 0068 2382     		strh	r3, [r4, #16]	@ movhi
+ 138:Core/Src/bme280.c ****   dev->calib.dig_P5 = (int16_t)((buf1[15] << 8) | buf1[14]);
+ 664              		.loc 1 138 3 is_stmt 1 view .LVU194
+ 138:Core/Src/bme280.c ****   dev->calib.dig_P5 = (int16_t)((buf1[15] << 8) | buf1[14]);
+ 665              		.loc 1 138 38 is_stmt 0 view .LVU195
+ 666 006a 9DF81920 		ldrb	r2, [sp, #25]	@ zero_extendqisi2
+ 138:Core/Src/bme280.c ****   dev->calib.dig_P5 = (int16_t)((buf1[15] << 8) | buf1[14]);
+ 667              		.loc 1 138 55 view .LVU196
+ 668 006e 9DF81830 		ldrb	r3, [sp, #24]	@ zero_extendqisi2
+ 138:Core/Src/bme280.c ****   dev->calib.dig_P5 = (int16_t)((buf1[15] << 8) | buf1[14]);
+ 669              		.loc 1 138 23 view .LVU197
+ 670 0072 43EA0223 		orr	r3, r3, r2, lsl #8
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 18
+
+
+ 138:Core/Src/bme280.c ****   dev->calib.dig_P5 = (int16_t)((buf1[15] << 8) | buf1[14]);
+ 671              		.loc 1 138 21 view .LVU198
+ 672 0076 6382     		strh	r3, [r4, #18]	@ movhi
+ 139:Core/Src/bme280.c ****   dev->calib.dig_P6 = (int16_t)((buf1[17] << 8) | buf1[16]);
+ 673              		.loc 1 139 3 is_stmt 1 view .LVU199
+ 139:Core/Src/bme280.c ****   dev->calib.dig_P6 = (int16_t)((buf1[17] << 8) | buf1[16]);
+ 674              		.loc 1 139 38 is_stmt 0 view .LVU200
+ 675 0078 9DF81B20 		ldrb	r2, [sp, #27]	@ zero_extendqisi2
+ 139:Core/Src/bme280.c ****   dev->calib.dig_P6 = (int16_t)((buf1[17] << 8) | buf1[16]);
+ 676              		.loc 1 139 55 view .LVU201
+ 677 007c 9DF81A30 		ldrb	r3, [sp, #26]	@ zero_extendqisi2
+ 139:Core/Src/bme280.c ****   dev->calib.dig_P6 = (int16_t)((buf1[17] << 8) | buf1[16]);
+ 678              		.loc 1 139 23 view .LVU202
+ 679 0080 43EA0223 		orr	r3, r3, r2, lsl #8
+ 139:Core/Src/bme280.c ****   dev->calib.dig_P6 = (int16_t)((buf1[17] << 8) | buf1[16]);
+ 680              		.loc 1 139 21 view .LVU203
+ 681 0084 A382     		strh	r3, [r4, #20]	@ movhi
+ 140:Core/Src/bme280.c ****   dev->calib.dig_P7 = (int16_t)((buf1[19] << 8) | buf1[18]);
+ 682              		.loc 1 140 3 is_stmt 1 view .LVU204
+ 140:Core/Src/bme280.c ****   dev->calib.dig_P7 = (int16_t)((buf1[19] << 8) | buf1[18]);
+ 683              		.loc 1 140 38 is_stmt 0 view .LVU205
+ 684 0086 9DF81D20 		ldrb	r2, [sp, #29]	@ zero_extendqisi2
+ 140:Core/Src/bme280.c ****   dev->calib.dig_P7 = (int16_t)((buf1[19] << 8) | buf1[18]);
+ 685              		.loc 1 140 55 view .LVU206
+ 686 008a 9DF81C30 		ldrb	r3, [sp, #28]	@ zero_extendqisi2
+ 140:Core/Src/bme280.c ****   dev->calib.dig_P7 = (int16_t)((buf1[19] << 8) | buf1[18]);
+ 687              		.loc 1 140 23 view .LVU207
+ 688 008e 43EA0223 		orr	r3, r3, r2, lsl #8
+ 140:Core/Src/bme280.c ****   dev->calib.dig_P7 = (int16_t)((buf1[19] << 8) | buf1[18]);
+ 689              		.loc 1 140 21 view .LVU208
+ 690 0092 E382     		strh	r3, [r4, #22]	@ movhi
+ 141:Core/Src/bme280.c ****   dev->calib.dig_P8 = (int16_t)((buf1[21] << 8) | buf1[20]);
+ 691              		.loc 1 141 3 is_stmt 1 view .LVU209
+ 141:Core/Src/bme280.c ****   dev->calib.dig_P8 = (int16_t)((buf1[21] << 8) | buf1[20]);
+ 692              		.loc 1 141 38 is_stmt 0 view .LVU210
+ 693 0094 9DF81F20 		ldrb	r2, [sp, #31]	@ zero_extendqisi2
+ 141:Core/Src/bme280.c ****   dev->calib.dig_P8 = (int16_t)((buf1[21] << 8) | buf1[20]);
+ 694              		.loc 1 141 55 view .LVU211
+ 695 0098 9DF81E30 		ldrb	r3, [sp, #30]	@ zero_extendqisi2
+ 141:Core/Src/bme280.c ****   dev->calib.dig_P8 = (int16_t)((buf1[21] << 8) | buf1[20]);
+ 696              		.loc 1 141 23 view .LVU212
+ 697 009c 43EA0223 		orr	r3, r3, r2, lsl #8
+ 141:Core/Src/bme280.c ****   dev->calib.dig_P8 = (int16_t)((buf1[21] << 8) | buf1[20]);
+ 698              		.loc 1 141 21 view .LVU213
+ 699 00a0 2383     		strh	r3, [r4, #24]	@ movhi
+ 142:Core/Src/bme280.c ****   dev->calib.dig_P9 = (int16_t)((buf1[23] << 8) | buf1[22]);
+ 700              		.loc 1 142 3 is_stmt 1 view .LVU214
+ 142:Core/Src/bme280.c ****   dev->calib.dig_P9 = (int16_t)((buf1[23] << 8) | buf1[22]);
+ 701              		.loc 1 142 38 is_stmt 0 view .LVU215
+ 702 00a2 9DF82120 		ldrb	r2, [sp, #33]	@ zero_extendqisi2
+ 142:Core/Src/bme280.c ****   dev->calib.dig_P9 = (int16_t)((buf1[23] << 8) | buf1[22]);
+ 703              		.loc 1 142 55 view .LVU216
+ 704 00a6 9DF82030 		ldrb	r3, [sp, #32]	@ zero_extendqisi2
+ 142:Core/Src/bme280.c ****   dev->calib.dig_P9 = (int16_t)((buf1[23] << 8) | buf1[22]);
+ 705              		.loc 1 142 23 view .LVU217
+ 706 00aa 43EA0223 		orr	r3, r3, r2, lsl #8
+ 142:Core/Src/bme280.c ****   dev->calib.dig_P9 = (int16_t)((buf1[23] << 8) | buf1[22]);
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 19
+
+
+ 707              		.loc 1 142 21 view .LVU218
+ 708 00ae 6383     		strh	r3, [r4, #26]	@ movhi
+ 143:Core/Src/bme280.c ****   dev->calib.dig_H1 = buf1[25];
+ 709              		.loc 1 143 3 is_stmt 1 view .LVU219
+ 143:Core/Src/bme280.c ****   dev->calib.dig_H1 = buf1[25];
+ 710              		.loc 1 143 38 is_stmt 0 view .LVU220
+ 711 00b0 9DF82320 		ldrb	r2, [sp, #35]	@ zero_extendqisi2
+ 143:Core/Src/bme280.c ****   dev->calib.dig_H1 = buf1[25];
+ 712              		.loc 1 143 55 view .LVU221
+ 713 00b4 9DF82230 		ldrb	r3, [sp, #34]	@ zero_extendqisi2
+ 143:Core/Src/bme280.c ****   dev->calib.dig_H1 = buf1[25];
+ 714              		.loc 1 143 23 view .LVU222
+ 715 00b8 43EA0223 		orr	r3, r3, r2, lsl #8
+ 143:Core/Src/bme280.c ****   dev->calib.dig_H1 = buf1[25];
+ 716              		.loc 1 143 21 view .LVU223
+ 717 00bc A383     		strh	r3, [r4, #28]	@ movhi
+ 144:Core/Src/bme280.c **** 
+ 718              		.loc 1 144 3 is_stmt 1 view .LVU224
+ 144:Core/Src/bme280.c **** 
+ 719              		.loc 1 144 27 is_stmt 0 view .LVU225
+ 720 00be 9DF82530 		ldrb	r3, [sp, #37]	@ zero_extendqisi2
+ 144:Core/Src/bme280.c **** 
+ 721              		.loc 1 144 21 view .LVU226
+ 722 00c2 A377     		strb	r3, [r4, #30]
+ 146:Core/Src/bme280.c ****   status = bme280_read_block(dev, 0xE1U, buf2, sizeof(buf2));
+ 723              		.loc 1 146 3 is_stmt 1 view .LVU227
+ 147:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 724              		.loc 1 147 3 view .LVU228
+ 147:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 725              		.loc 1 147 12 is_stmt 0 view .LVU229
+ 726 00c4 0723     		movs	r3, #7
+ 727 00c6 01AA     		add	r2, sp, #4
+ 728 00c8 E121     		movs	r1, #225
+ 729 00ca 2046     		mov	r0, r4
+ 730 00cc FFF7FEFF 		bl	bme280_read_block
+ 731              	.LVL54:
+ 148:Core/Src/bme280.c ****   {
+ 732              		.loc 1 148 3 is_stmt 1 view .LVU230
+ 148:Core/Src/bme280.c ****   {
+ 733              		.loc 1 148 6 is_stmt 0 view .LVU231
+ 734 00d0 0028     		cmp	r0, #0
+ 735 00d2 9ED1     		bne	.L24
+ 153:Core/Src/bme280.c ****   dev->calib.dig_H3 = buf2[2];
+ 736              		.loc 1 153 3 is_stmt 1 view .LVU232
+ 153:Core/Src/bme280.c ****   dev->calib.dig_H3 = buf2[2];
+ 737              		.loc 1 153 38 is_stmt 0 view .LVU233
+ 738 00d4 9DF80520 		ldrb	r2, [sp, #5]	@ zero_extendqisi2
+ 153:Core/Src/bme280.c ****   dev->calib.dig_H3 = buf2[2];
+ 739              		.loc 1 153 54 view .LVU234
+ 740 00d8 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 153:Core/Src/bme280.c ****   dev->calib.dig_H3 = buf2[2];
+ 741              		.loc 1 153 23 view .LVU235
+ 742 00dc 43EA0223 		orr	r3, r3, r2, lsl #8
+ 153:Core/Src/bme280.c ****   dev->calib.dig_H3 = buf2[2];
+ 743              		.loc 1 153 21 view .LVU236
+ 744 00e0 2384     		strh	r3, [r4, #32]	@ movhi
+ 154:Core/Src/bme280.c ****   dev->calib.dig_H4 = (int16_t)((buf2[3] << 4) | (buf2[4] & 0x0FU));
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 20
+
+
+ 745              		.loc 1 154 3 is_stmt 1 view .LVU237
+ 154:Core/Src/bme280.c ****   dev->calib.dig_H4 = (int16_t)((buf2[3] << 4) | (buf2[4] & 0x0FU));
+ 746              		.loc 1 154 27 is_stmt 0 view .LVU238
+ 747 00e2 9DF80630 		ldrb	r3, [sp, #6]	@ zero_extendqisi2
+ 154:Core/Src/bme280.c ****   dev->calib.dig_H4 = (int16_t)((buf2[3] << 4) | (buf2[4] & 0x0FU));
+ 748              		.loc 1 154 21 view .LVU239
+ 749 00e6 84F82230 		strb	r3, [r4, #34]
+ 155:Core/Src/bme280.c ****   dev->calib.dig_H5 = (int16_t)((buf2[5] << 4) | (buf2[4] >> 4));
+ 750              		.loc 1 155 3 is_stmt 1 view .LVU240
+ 155:Core/Src/bme280.c ****   dev->calib.dig_H5 = (int16_t)((buf2[5] << 4) | (buf2[4] >> 4));
+ 751              		.loc 1 155 38 is_stmt 0 view .LVU241
+ 752 00ea 9DF80710 		ldrb	r1, [sp, #7]	@ zero_extendqisi2
+ 155:Core/Src/bme280.c ****   dev->calib.dig_H5 = (int16_t)((buf2[5] << 4) | (buf2[4] >> 4));
+ 753              		.loc 1 155 55 view .LVU242
+ 754 00ee 9DF80830 		ldrb	r3, [sp, #8]	@ zero_extendqisi2
+ 155:Core/Src/bme280.c ****   dev->calib.dig_H5 = (int16_t)((buf2[5] << 4) | (buf2[4] >> 4));
+ 755              		.loc 1 155 59 view .LVU243
+ 756 00f2 03F00F02 		and	r2, r3, #15
+ 155:Core/Src/bme280.c ****   dev->calib.dig_H5 = (int16_t)((buf2[5] << 4) | (buf2[4] >> 4));
+ 757              		.loc 1 155 23 view .LVU244
+ 758 00f6 42EA0112 		orr	r2, r2, r1, lsl #4
+ 155:Core/Src/bme280.c ****   dev->calib.dig_H5 = (int16_t)((buf2[5] << 4) | (buf2[4] >> 4));
+ 759              		.loc 1 155 21 view .LVU245
+ 760 00fa A284     		strh	r2, [r4, #36]	@ movhi
+ 156:Core/Src/bme280.c ****   dev->calib.dig_H6 = (int8_t)buf2[6];
+ 761              		.loc 1 156 3 is_stmt 1 view .LVU246
+ 156:Core/Src/bme280.c ****   dev->calib.dig_H6 = (int8_t)buf2[6];
+ 762              		.loc 1 156 38 is_stmt 0 view .LVU247
+ 763 00fc 9DF80920 		ldrb	r2, [sp, #9]	@ zero_extendqisi2
+ 156:Core/Src/bme280.c ****   dev->calib.dig_H6 = (int8_t)buf2[6];
+ 764              		.loc 1 156 23 view .LVU248
+ 765 0100 1B09     		lsrs	r3, r3, #4
+ 766 0102 43EA0213 		orr	r3, r3, r2, lsl #4
+ 156:Core/Src/bme280.c ****   dev->calib.dig_H6 = (int8_t)buf2[6];
+ 767              		.loc 1 156 21 view .LVU249
+ 768 0106 E384     		strh	r3, [r4, #38]	@ movhi
+ 157:Core/Src/bme280.c **** 
+ 769              		.loc 1 157 3 is_stmt 1 view .LVU250
+ 157:Core/Src/bme280.c **** 
+ 770              		.loc 1 157 23 is_stmt 0 view .LVU251
+ 771 0108 9DF90A30 		ldrsb	r3, [sp, #10]
+ 157:Core/Src/bme280.c **** 
+ 772              		.loc 1 157 21 view .LVU252
+ 773 010c 84F82830 		strb	r3, [r4, #40]
+ 159:Core/Src/bme280.c **** }
+ 774              		.loc 1 159 3 is_stmt 1 view .LVU253
+ 159:Core/Src/bme280.c **** }
+ 775              		.loc 1 159 10 is_stmt 0 view .LVU254
+ 776 0110 7FE7     		b	.L24
+ 777              		.cfi_endproc
+ 778              	.LFE136:
+ 780              		.section	.text.bme280_write8,"ax",%progbits
+ 781              		.align	1
+ 782              		.syntax unified
+ 783              		.thumb
+ 784              		.thumb_func
+ 786              	bme280_write8:
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 21
+
+
+ 787              	.LVL55:
+ 788              	.LFB137:
+ 163:Core/Src/bme280.c ****   return HAL_I2C_Mem_Write(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, &value, 1U, BME280_TI
+ 789              		.loc 1 163 1 is_stmt 1 view -0
+ 790              		.cfi_startproc
+ 791              		@ args = 0, pretend = 0, frame = 8
+ 792              		@ frame_needed = 0, uses_anonymous_args = 0
+ 163:Core/Src/bme280.c ****   return HAL_I2C_Mem_Write(dev->i2c, dev->address, reg, I2C_MEMADD_SIZE_8BIT, &value, 1U, BME280_TI
+ 793              		.loc 1 163 1 is_stmt 0 view .LVU256
+ 794 0000 00B5     		push	{lr}
+ 795              	.LCFI10:
+ 796              		.cfi_def_cfa_offset 4
+ 797              		.cfi_offset 14, -4
+ 798 0002 87B0     		sub	sp, sp, #28
+ 799              	.LCFI11:
+ 800              		.cfi_def_cfa_offset 32
+ 801 0004 8DF81720 		strb	r2, [sp, #23]
+ 164:Core/Src/bme280.c **** }
+ 802              		.loc 1 164 3 is_stmt 1 view .LVU257
+ 164:Core/Src/bme280.c **** }
+ 803              		.loc 1 164 10 is_stmt 0 view .LVU258
+ 804 0008 6423     		movs	r3, #100
+ 805 000a 0293     		str	r3, [sp, #8]
+ 806 000c 0123     		movs	r3, #1
+ 807 000e 0193     		str	r3, [sp, #4]
+ 808 0010 0DF11702 		add	r2, sp, #23
+ 809              	.LVL56:
+ 164:Core/Src/bme280.c **** }
+ 810              		.loc 1 164 10 view .LVU259
+ 811 0014 0092     		str	r2, [sp]
+ 812 0016 0A46     		mov	r2, r1
+ 813              	.LVL57:
+ 164:Core/Src/bme280.c **** }
+ 814              		.loc 1 164 10 view .LVU260
+ 815 0018 0179     		ldrb	r1, [r0, #4]	@ zero_extendqisi2
+ 816              	.LVL58:
+ 164:Core/Src/bme280.c **** }
+ 817              		.loc 1 164 10 view .LVU261
+ 818 001a 0068     		ldr	r0, [r0]
+ 819              	.LVL59:
+ 164:Core/Src/bme280.c **** }
+ 820              		.loc 1 164 10 view .LVU262
+ 821 001c FFF7FEFF 		bl	HAL_I2C_Mem_Write
+ 822              	.LVL60:
+ 165:Core/Src/bme280.c **** 
+ 823              		.loc 1 165 1 view .LVU263
+ 824 0020 07B0     		add	sp, sp, #28
+ 825              	.LCFI12:
+ 826              		.cfi_def_cfa_offset 4
+ 827              		@ sp needed
+ 828 0022 5DF804FB 		ldr	pc, [sp], #4
+ 829              		.cfi_endproc
+ 830              	.LFE137:
+ 832              		.section	.text.BME280_Init,"ax",%progbits
+ 833              		.align	1
+ 834              		.global	BME280_Init
+ 835              		.syntax unified
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 22
+
+
+ 836              		.thumb
+ 837              		.thumb_func
+ 839              	BME280_Init:
+ 840              	.LVL61:
+ 841              	.LFB134:
+  26:Core/Src/bme280.c ****   if (dev == NULL || dev->i2c == NULL)
+ 842              		.loc 1 26 1 is_stmt 1 view -0
+ 843              		.cfi_startproc
+ 844              		@ args = 0, pretend = 0, frame = 8
+ 845              		@ frame_needed = 0, uses_anonymous_args = 0
+  27:Core/Src/bme280.c ****   {
+ 846              		.loc 1 27 3 view .LVU265
+  27:Core/Src/bme280.c ****   {
+ 847              		.loc 1 27 6 is_stmt 0 view .LVU266
+ 848 0000 60B3     		cbz	r0, .L31
+  26:Core/Src/bme280.c ****   if (dev == NULL || dev->i2c == NULL)
+ 849              		.loc 1 26 1 view .LVU267
+ 850 0002 10B5     		push	{r4, lr}
+ 851              	.LCFI13:
+ 852              		.cfi_def_cfa_offset 8
+ 853              		.cfi_offset 4, -8
+ 854              		.cfi_offset 14, -4
+ 855 0004 82B0     		sub	sp, sp, #8
+ 856              	.LCFI14:
+ 857              		.cfi_def_cfa_offset 16
+ 858 0006 0446     		mov	r4, r0
+  27:Core/Src/bme280.c ****   {
+ 859              		.loc 1 27 25 discriminator 1 view .LVU268
+ 860 0008 0368     		ldr	r3, [r0]
+  27:Core/Src/bme280.c ****   {
+ 861              		.loc 1 27 19 discriminator 1 view .LVU269
+ 862 000a 4BB3     		cbz	r3, .L32
+  32:Core/Src/bme280.c ****   HAL_StatusTypeDef status = bme280_read8(dev, BME280_REG_ID, &id);
+ 863              		.loc 1 32 3 is_stmt 1 view .LVU270
+  32:Core/Src/bme280.c ****   HAL_StatusTypeDef status = bme280_read8(dev, BME280_REG_ID, &id);
+ 864              		.loc 1 32 11 is_stmt 0 view .LVU271
+ 865 000c 0023     		movs	r3, #0
+ 866 000e 8DF80730 		strb	r3, [sp, #7]
+  33:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 867              		.loc 1 33 3 is_stmt 1 view .LVU272
+  33:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 868              		.loc 1 33 30 is_stmt 0 view .LVU273
+ 869 0012 0DF10702 		add	r2, sp, #7
+ 870 0016 D021     		movs	r1, #208
+ 871 0018 FFF7FEFF 		bl	bme280_read8
+ 872              	.LVL62:
+  34:Core/Src/bme280.c ****   {
+ 873              		.loc 1 34 3 is_stmt 1 view .LVU274
+  34:Core/Src/bme280.c ****   {
+ 874              		.loc 1 34 6 is_stmt 0 view .LVU275
+ 875 001c 08BB     		cbnz	r0, .L30
+  39:Core/Src/bme280.c ****   {
+ 876              		.loc 1 39 3 is_stmt 1 view .LVU276
+  39:Core/Src/bme280.c ****   {
+ 877              		.loc 1 39 10 is_stmt 0 view .LVU277
+ 878 001e 9DF80730 		ldrb	r3, [sp, #7]	@ zero_extendqisi2
+  39:Core/Src/bme280.c ****   {
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 23
+
+
+ 879              		.loc 1 39 6 view .LVU278
+ 880 0022 602B     		cmp	r3, #96
+ 881 0024 01D0     		beq	.L38
+  41:Core/Src/bme280.c ****   }
+ 882              		.loc 1 41 12 view .LVU279
+ 883 0026 0120     		movs	r0, #1
+ 884              	.LVL63:
+  41:Core/Src/bme280.c ****   }
+ 885              		.loc 1 41 12 view .LVU280
+ 886 0028 1BE0     		b	.L30
+ 887              	.LVL64:
+ 888              	.L38:
+  44:Core/Src/bme280.c ****   status = bme280_write8(dev, BME280_REG_RESET, reset);
+ 889              		.loc 1 44 3 is_stmt 1 view .LVU281
+  45:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 890              		.loc 1 45 3 view .LVU282
+  45:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 891              		.loc 1 45 12 is_stmt 0 view .LVU283
+ 892 002a B622     		movs	r2, #182
+ 893 002c E021     		movs	r1, #224
+ 894 002e 2046     		mov	r0, r4
+ 895              	.LVL65:
+  45:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 896              		.loc 1 45 12 view .LVU284
+ 897 0030 FFF7FEFF 		bl	bme280_write8
+ 898              	.LVL66:
+  46:Core/Src/bme280.c ****   {
+ 899              		.loc 1 46 3 is_stmt 1 view .LVU285
+  46:Core/Src/bme280.c ****   {
+ 900              		.loc 1 46 6 is_stmt 0 view .LVU286
+ 901 0034 A8B9     		cbnz	r0, .L30
+  51:Core/Src/bme280.c **** 
+ 902              		.loc 1 51 3 is_stmt 1 view .LVU287
+ 903 0036 0220     		movs	r0, #2
+ 904              	.LVL67:
+  51:Core/Src/bme280.c **** 
+ 905              		.loc 1 51 3 is_stmt 0 view .LVU288
+ 906 0038 FFF7FEFF 		bl	HAL_Delay
+ 907              	.LVL68:
+  53:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 908              		.loc 1 53 3 is_stmt 1 view .LVU289
+  53:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 909              		.loc 1 53 12 is_stmt 0 view .LVU290
+ 910 003c 2046     		mov	r0, r4
+ 911 003e FFF7FEFF 		bl	bme280_read_calibration
+ 912              	.LVL69:
+  54:Core/Src/bme280.c ****   {
+ 913              		.loc 1 54 3 is_stmt 1 view .LVU291
+  54:Core/Src/bme280.c ****   {
+ 914              		.loc 1 54 6 is_stmt 0 view .LVU292
+ 915 0042 70B9     		cbnz	r0, .L30
+  60:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 916              		.loc 1 60 3 is_stmt 1 view .LVU293
+  60:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 917              		.loc 1 60 12 is_stmt 0 view .LVU294
+ 918 0044 0022     		movs	r2, #0
+ 919 0046 F521     		movs	r1, #245
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 24
+
+
+ 920 0048 2046     		mov	r0, r4
+ 921              	.LVL70:
+  60:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 922              		.loc 1 60 12 view .LVU295
+ 923 004a FFF7FEFF 		bl	bme280_write8
+ 924              	.LVL71:
+  61:Core/Src/bme280.c ****   {
+ 925              		.loc 1 61 3 is_stmt 1 view .LVU296
+  61:Core/Src/bme280.c ****   {
+ 926              		.loc 1 61 6 is_stmt 0 view .LVU297
+ 927 004e 40B9     		cbnz	r0, .L30
+  67:Core/Src/bme280.c ****   return status;
+ 928              		.loc 1 67 3 is_stmt 1 view .LVU298
+  67:Core/Src/bme280.c ****   return status;
+ 929              		.loc 1 67 12 is_stmt 0 view .LVU299
+ 930 0050 0122     		movs	r2, #1
+ 931 0052 F221     		movs	r1, #242
+ 932 0054 2046     		mov	r0, r4
+ 933              	.LVL72:
+  67:Core/Src/bme280.c ****   return status;
+ 934              		.loc 1 67 12 view .LVU300
+ 935 0056 FFF7FEFF 		bl	bme280_write8
+ 936              	.LVL73:
+  68:Core/Src/bme280.c **** }
+ 937              		.loc 1 68 3 is_stmt 1 view .LVU301
+  68:Core/Src/bme280.c **** }
+ 938              		.loc 1 68 10 is_stmt 0 view .LVU302
+ 939 005a 02E0     		b	.L30
+ 940              	.LVL74:
+ 941              	.L31:
+ 942              	.LCFI15:
+ 943              		.cfi_def_cfa_offset 0
+ 944              		.cfi_restore 4
+ 945              		.cfi_restore 14
+  29:Core/Src/bme280.c ****   }
+ 946              		.loc 1 29 12 view .LVU303
+ 947 005c 0120     		movs	r0, #1
+ 948              	.LVL75:
+  69:Core/Src/bme280.c **** 
+ 949              		.loc 1 69 1 view .LVU304
+ 950 005e 7047     		bx	lr
+ 951              	.LVL76:
+ 952              	.L32:
+ 953              	.LCFI16:
+ 954              		.cfi_def_cfa_offset 16
+ 955              		.cfi_offset 4, -8
+ 956              		.cfi_offset 14, -4
+  29:Core/Src/bme280.c ****   }
+ 957              		.loc 1 29 12 view .LVU305
+ 958 0060 0120     		movs	r0, #1
+ 959              	.LVL77:
+ 960              	.L30:
+  69:Core/Src/bme280.c **** 
+ 961              		.loc 1 69 1 view .LVU306
+ 962 0062 02B0     		add	sp, sp, #8
+ 963              	.LCFI17:
+ 964              		.cfi_def_cfa_offset 8
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 25
+
+
+ 965              		@ sp needed
+ 966 0064 10BD     		pop	{r4, pc}
+  69:Core/Src/bme280.c **** 
+ 967              		.loc 1 69 1 view .LVU307
+ 968              		.cfi_endproc
+ 969              	.LFE134:
+ 971              		.section	.text.BME280_ReadMeasurements,"ax",%progbits
+ 972              		.align	1
+ 973              		.global	BME280_ReadMeasurements
+ 974              		.syntax unified
+ 975              		.thumb
+ 976              		.thumb_func
+ 978              	BME280_ReadMeasurements:
+ 979              	.LVL78:
+ 980              	.LFB135:
+  72:Core/Src/bme280.c ****   if (dev == NULL || out == NULL)
+ 981              		.loc 1 72 1 is_stmt 1 view -0
+ 982              		.cfi_startproc
+ 983              		@ args = 0, pretend = 0, frame = 16
+ 984              		@ frame_needed = 0, uses_anonymous_args = 0
+  72:Core/Src/bme280.c ****   if (dev == NULL || out == NULL)
+ 985              		.loc 1 72 1 is_stmt 0 view .LVU309
+ 986 0000 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 987              	.LCFI18:
+ 988              		.cfi_def_cfa_offset 24
+ 989              		.cfi_offset 4, -24
+ 990              		.cfi_offset 5, -20
+ 991              		.cfi_offset 6, -16
+ 992              		.cfi_offset 7, -12
+ 993              		.cfi_offset 8, -8
+ 994              		.cfi_offset 14, -4
+ 995 0004 84B0     		sub	sp, sp, #16
+ 996              	.LCFI19:
+ 997              		.cfi_def_cfa_offset 40
+  73:Core/Src/bme280.c ****   {
+ 998              		.loc 1 73 3 is_stmt 1 view .LVU310
+  73:Core/Src/bme280.c ****   {
+ 999              		.loc 1 73 6 is_stmt 0 view .LVU311
+ 1000 0006 0028     		cmp	r0, #0
+ 1001 0008 65D0     		beq	.L43
+ 1002 000a 0E46     		mov	r6, r1
+ 1003 000c 0546     		mov	r5, r0
+  73:Core/Src/bme280.c ****   {
+ 1004              		.loc 1 73 19 discriminator 1 view .LVU312
+ 1005 000e 0029     		cmp	r1, #0
+ 1006 0010 63D0     		beq	.L44
+  78:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 1007              		.loc 1 78 3 is_stmt 1 view .LVU313
+  78:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 1008              		.loc 1 78 30 is_stmt 0 view .LVU314
+ 1009 0012 2522     		movs	r2, #37
+ 1010 0014 F421     		movs	r1, #244
+ 1011              	.LVL79:
+  78:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 1012              		.loc 1 78 30 view .LVU315
+ 1013 0016 FFF7FEFF 		bl	bme280_write8
+ 1014              	.LVL80:
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 26
+
+
+  79:Core/Src/bme280.c ****   {
+ 1015              		.loc 1 79 3 is_stmt 1 view .LVU316
+  79:Core/Src/bme280.c ****   {
+ 1016              		.loc 1 79 6 is_stmt 0 view .LVU317
+ 1017 001a 0446     		mov	r4, r0
+ 1018 001c 18B1     		cbz	r0, .L47
+ 1019              	.LVL81:
+ 1020              	.L40:
+ 121:Core/Src/bme280.c **** 
+ 1021              		.loc 1 121 1 view .LVU318
+ 1022 001e 2046     		mov	r0, r4
+ 1023 0020 04B0     		add	sp, sp, #16
+ 1024              	.LCFI20:
+ 1025              		.cfi_remember_state
+ 1026              		.cfi_def_cfa_offset 24
+ 1027              		@ sp needed
+ 1028 0022 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 1029              	.LVL82:
+ 1030              	.L47:
+ 1031              	.LCFI21:
+ 1032              		.cfi_restore_state
+  84:Core/Src/bme280.c ****   uint32_t timeout = HAL_GetTick() + 20U;
+ 1033              		.loc 1 84 3 is_stmt 1 view .LVU319
+  84:Core/Src/bme280.c ****   uint32_t timeout = HAL_GetTick() + 20U;
+ 1034              		.loc 1 84 11 is_stmt 0 view .LVU320
+ 1035 0026 0023     		movs	r3, #0
+ 1036 0028 8DF80F30 		strb	r3, [sp, #15]
+  85:Core/Src/bme280.c ****   do
+ 1037              		.loc 1 85 3 is_stmt 1 view .LVU321
+  85:Core/Src/bme280.c ****   do
+ 1038              		.loc 1 85 22 is_stmt 0 view .LVU322
+ 1039 002c FFF7FEFF 		bl	HAL_GetTick
+ 1040              	.LVL83:
+  85:Core/Src/bme280.c ****   do
+ 1041              		.loc 1 85 12 discriminator 1 view .LVU323
+ 1042 0030 00F11407 		add	r7, r0, #20
+ 1043              	.LVL84:
+ 1044              	.L42:
+  86:Core/Src/bme280.c ****   {
+ 1045              		.loc 1 86 3 is_stmt 1 view .LVU324
+  88:Core/Src/bme280.c ****     if (status != HAL_OK)
+ 1046              		.loc 1 88 5 view .LVU325
+  88:Core/Src/bme280.c ****     if (status != HAL_OK)
+ 1047              		.loc 1 88 14 is_stmt 0 view .LVU326
+ 1048 0034 0DF10F02 		add	r2, sp, #15
+ 1049 0038 F321     		movs	r1, #243
+ 1050 003a 2846     		mov	r0, r5
+ 1051 003c FFF7FEFF 		bl	bme280_read8
+ 1052              	.LVL85:
+  89:Core/Src/bme280.c ****     {
+ 1053              		.loc 1 89 5 is_stmt 1 view .LVU327
+  89:Core/Src/bme280.c ****     {
+ 1054              		.loc 1 89 8 is_stmt 0 view .LVU328
+ 1055 0040 0446     		mov	r4, r0
+ 1056 0042 0028     		cmp	r0, #0
+ 1057 0044 EBD1     		bne	.L40
+  94:Core/Src/bme280.c ****     {
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 27
+
+
+ 1058              		.loc 1 94 5 is_stmt 1 view .LVU329
+  94:Core/Src/bme280.c ****     {
+ 1059              		.loc 1 94 22 is_stmt 0 view .LVU330
+ 1060 0046 9DF80F30 		ldrb	r3, [sp, #15]	@ zero_extendqisi2
+  94:Core/Src/bme280.c ****     {
+ 1061              		.loc 1 94 8 view .LVU331
+ 1062 004a 13F0080F 		tst	r3, #8
+ 1063 004e 03D0     		beq	.L41
+  98:Core/Src/bme280.c **** 
+ 1064              		.loc 1 98 26 is_stmt 1 view .LVU332
+  98:Core/Src/bme280.c **** 
+ 1065              		.loc 1 98 12 is_stmt 0 view .LVU333
+ 1066 0050 FFF7FEFF 		bl	HAL_GetTick
+ 1067              	.LVL86:
+  98:Core/Src/bme280.c **** 
+ 1068              		.loc 1 98 26 discriminator 1 view .LVU334
+ 1069 0054 B842     		cmp	r0, r7
+ 1070 0056 EDD3     		bcc	.L42
+ 1071              	.L41:
+ 100:Core/Src/bme280.c ****   {
+ 1072              		.loc 1 100 3 is_stmt 1 view .LVU335
+ 100:Core/Src/bme280.c ****   {
+ 1073              		.loc 1 100 18 is_stmt 0 view .LVU336
+ 1074 0058 9DF80F30 		ldrb	r3, [sp, #15]	@ zero_extendqisi2
+ 100:Core/Src/bme280.c ****   {
+ 1075              		.loc 1 100 6 view .LVU337
+ 1076 005c 13F0080F 		tst	r3, #8
+ 1077 0060 3DD1     		bne	.L45
+ 105:Core/Src/bme280.c ****   status = bme280_read_block(dev, BME280_REG_PRESS_MSB, raw, sizeof(raw));
+ 1078              		.loc 1 105 3 is_stmt 1 view .LVU338
+ 105:Core/Src/bme280.c ****   status = bme280_read_block(dev, BME280_REG_PRESS_MSB, raw, sizeof(raw));
+ 1079              		.loc 1 105 11 is_stmt 0 view .LVU339
+ 1080 0062 0023     		movs	r3, #0
+ 1081 0064 0193     		str	r3, [sp, #4]
+ 1082 0066 0293     		str	r3, [sp, #8]
+ 106:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 1083              		.loc 1 106 3 is_stmt 1 view .LVU340
+ 106:Core/Src/bme280.c ****   if (status != HAL_OK)
+ 1084              		.loc 1 106 12 is_stmt 0 view .LVU341
+ 1085 0068 0823     		movs	r3, #8
+ 1086 006a 01AA     		add	r2, sp, #4
+ 1087 006c F721     		movs	r1, #247
+ 1088 006e 2846     		mov	r0, r5
+ 1089 0070 FFF7FEFF 		bl	bme280_read_block
+ 1090              	.LVL87:
+ 107:Core/Src/bme280.c ****   {
+ 1091              		.loc 1 107 3 is_stmt 1 view .LVU342
+ 107:Core/Src/bme280.c ****   {
+ 1092              		.loc 1 107 6 is_stmt 0 view .LVU343
+ 1093 0074 0446     		mov	r4, r0
+ 1094 0076 0028     		cmp	r0, #0
+ 1095 0078 D1D1     		bne	.L40
+ 112:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 1096              		.loc 1 112 3 is_stmt 1 view .LVU344
+ 112:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 1097              		.loc 1 112 32 is_stmt 0 view .LVU345
+ 1098 007a 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 28
+
+
+ 112:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 1099              		.loc 1 112 58 view .LVU346
+ 1100 007e 9DF80570 		ldrb	r7, [sp, #5]	@ zero_extendqisi2
+ 1101              	.LVL88:
+ 112:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 1102              		.loc 1 112 62 view .LVU347
+ 1103 0082 3F01     		lsls	r7, r7, #4
+ 112:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 1104              		.loc 1 112 43 view .LVU348
+ 1105 0084 47EA0337 		orr	r7, r7, r3, lsl #12
+ 112:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 1106              		.loc 1 112 83 view .LVU349
+ 1107 0088 9DF80630 		ldrb	r3, [sp, #6]	@ zero_extendqisi2
+ 112:Core/Src/bme280.c ****   int32_t adc_T = ((int32_t)raw[3] << 12) | ((int32_t)raw[4] << 4) | ((int32_t)raw[5] >> 4);
+ 1108              		.loc 1 112 11 view .LVU350
+ 1109 008c 47EA1317 		orr	r7, r7, r3, lsr #4
+ 1110              	.LVL89:
+ 113:Core/Src/bme280.c ****   int32_t adc_H = ((int32_t)raw[6] << 8) | (int32_t)raw[7];
+ 1111              		.loc 1 113 3 is_stmt 1 view .LVU351
+ 113:Core/Src/bme280.c ****   int32_t adc_H = ((int32_t)raw[6] << 8) | (int32_t)raw[7];
+ 1112              		.loc 1 113 32 is_stmt 0 view .LVU352
+ 1113 0090 9DF80720 		ldrb	r2, [sp, #7]	@ zero_extendqisi2
+ 113:Core/Src/bme280.c ****   int32_t adc_H = ((int32_t)raw[6] << 8) | (int32_t)raw[7];
+ 1114              		.loc 1 113 58 view .LVU353
+ 1115 0094 9DF80830 		ldrb	r3, [sp, #8]	@ zero_extendqisi2
+ 113:Core/Src/bme280.c ****   int32_t adc_H = ((int32_t)raw[6] << 8) | (int32_t)raw[7];
+ 1116              		.loc 1 113 62 view .LVU354
+ 1117 0098 1B01     		lsls	r3, r3, #4
+ 113:Core/Src/bme280.c ****   int32_t adc_H = ((int32_t)raw[6] << 8) | (int32_t)raw[7];
+ 1118              		.loc 1 113 43 view .LVU355
+ 1119 009a 43EA0233 		orr	r3, r3, r2, lsl #12
+ 113:Core/Src/bme280.c ****   int32_t adc_H = ((int32_t)raw[6] << 8) | (int32_t)raw[7];
+ 1120              		.loc 1 113 83 view .LVU356
+ 1121 009e 9DF80910 		ldrb	r1, [sp, #9]	@ zero_extendqisi2
+ 1122              	.LVL90:
+ 114:Core/Src/bme280.c **** 
+ 1123              		.loc 1 114 3 is_stmt 1 view .LVU357
+ 114:Core/Src/bme280.c **** 
+ 1124              		.loc 1 114 32 is_stmt 0 view .LVU358
+ 1125 00a2 9DF80A20 		ldrb	r2, [sp, #10]	@ zero_extendqisi2
+ 114:Core/Src/bme280.c **** 
+ 1126              		.loc 1 114 56 view .LVU359
+ 1127 00a6 9DF80B80 		ldrb	r8, [sp, #11]	@ zero_extendqisi2
+ 114:Core/Src/bme280.c **** 
+ 1128              		.loc 1 114 11 view .LVU360
+ 1129 00aa 48EA0228 		orr	r8, r8, r2, lsl #8
+ 1130              	.LVL91:
+ 116:Core/Src/bme280.c ****   out->pressure_pa = bme280_compensate_pressure(dev, adc_P);
+ 1131              		.loc 1 116 3 is_stmt 1 view .LVU361
+ 116:Core/Src/bme280.c ****   out->pressure_pa = bme280_compensate_pressure(dev, adc_P);
+ 1132              		.loc 1 116 24 is_stmt 0 view .LVU362
+ 1133 00ae 43EA1111 		orr	r1, r3, r1, lsr #4
+ 1134              	.LVL92:
+ 116:Core/Src/bme280.c ****   out->pressure_pa = bme280_compensate_pressure(dev, adc_P);
+ 1135              		.loc 1 116 24 view .LVU363
+ 1136 00b2 2846     		mov	r0, r5
+ 1137              	.LVL93:
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 29
+
+
+ 116:Core/Src/bme280.c ****   out->pressure_pa = bme280_compensate_pressure(dev, adc_P);
+ 1138              		.loc 1 116 24 view .LVU364
+ 1139 00b4 FFF7FEFF 		bl	bme280_compensate_temperature
+ 1140              	.LVL94:
+ 116:Core/Src/bme280.c ****   out->pressure_pa = bme280_compensate_pressure(dev, adc_P);
+ 1141              		.loc 1 116 22 discriminator 1 view .LVU365
+ 1142 00b8 86ED000A 		vstr.32	s0, [r6]
+ 117:Core/Src/bme280.c ****   out->humidity_rh = bme280_compensate_humidity(dev, adc_H);
+ 1143              		.loc 1 117 3 is_stmt 1 view .LVU366
+ 117:Core/Src/bme280.c ****   out->humidity_rh = bme280_compensate_humidity(dev, adc_H);
+ 1144              		.loc 1 117 22 is_stmt 0 view .LVU367
+ 1145 00bc 3946     		mov	r1, r7
+ 1146 00be 2846     		mov	r0, r5
+ 1147 00c0 FFF7FEFF 		bl	bme280_compensate_pressure
+ 1148              	.LVL95:
+ 117:Core/Src/bme280.c ****   out->humidity_rh = bme280_compensate_humidity(dev, adc_H);
+ 1149              		.loc 1 117 20 discriminator 1 view .LVU368
+ 1150 00c4 86ED020A 		vstr.32	s0, [r6, #8]
+ 118:Core/Src/bme280.c **** 
+ 1151              		.loc 1 118 3 is_stmt 1 view .LVU369
+ 118:Core/Src/bme280.c **** 
+ 1152              		.loc 1 118 22 is_stmt 0 view .LVU370
+ 1153 00c8 4146     		mov	r1, r8
+ 1154 00ca 2846     		mov	r0, r5
+ 1155 00cc FFF7FEFF 		bl	bme280_compensate_humidity
+ 1156              	.LVL96:
+ 118:Core/Src/bme280.c **** 
+ 1157              		.loc 1 118 20 discriminator 1 view .LVU371
+ 1158 00d0 86ED010A 		vstr.32	s0, [r6, #4]
+ 120:Core/Src/bme280.c **** }
+ 1159              		.loc 1 120 3 is_stmt 1 view .LVU372
+ 120:Core/Src/bme280.c **** }
+ 1160              		.loc 1 120 10 is_stmt 0 view .LVU373
+ 1161 00d4 A3E7     		b	.L40
+ 1162              	.LVL97:
+ 1163              	.L43:
+  75:Core/Src/bme280.c ****   }
+ 1164              		.loc 1 75 12 view .LVU374
+ 1165 00d6 0124     		movs	r4, #1
+ 1166 00d8 A1E7     		b	.L40
+ 1167              	.L44:
+  75:Core/Src/bme280.c ****   }
+ 1168              		.loc 1 75 12 view .LVU375
+ 1169 00da 0124     		movs	r4, #1
+ 1170 00dc 9FE7     		b	.L40
+ 1171              	.LVL98:
+ 1172              	.L45:
+ 102:Core/Src/bme280.c ****   }
+ 1173              		.loc 1 102 12 view .LVU376
+ 1174 00de 0324     		movs	r4, #3
+ 1175              	.LVL99:
+ 102:Core/Src/bme280.c ****   }
+ 1176              		.loc 1 102 12 view .LVU377
+ 1177 00e0 9DE7     		b	.L40
+ 1178              		.cfi_endproc
+ 1179              	.LFE135:
+ 1181              		.text
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 30
+
+
+ 1182              	.Letext0:
+ 1183              		.file 2 "C:\\ST\\STM32CubeCLT_1.19.0\\GNU-tools-for-STM32\\bin/../lib/gcc/arm-none-eabi/13.3.1/../
+ 1184              		.file 3 "C:\\ST\\STM32CubeCLT_1.19.0\\GNU-tools-for-STM32\\bin/../lib/gcc/arm-none-eabi/13.3.1/../
+ 1185              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f439xx.h"
+ 1186              		.file 5 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 1187              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 1188              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h"
+ 1189              		.file 8 "Core/Inc/bme280.h"
+ 1190              		.file 9 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s 			page 31
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 bme280.c
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:21     .text.bme280_compensate_temperature:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:26     .text.bme280_compensate_temperature:00000000 bme280_compensate_temperature
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:103    .text.bme280_compensate_temperature:00000080 $d
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:113    .text.bme280_compensate_pressure:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:118    .text.bme280_compensate_pressure:00000000 bme280_compensate_pressure
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:308    .text.bme280_compensate_pressure:00000154 $d
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:322    .text.bme280_compensate_humidity:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:327    .text.bme280_compensate_humidity:00000000 bme280_compensate_humidity
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:453    .text.bme280_compensate_humidity:000000e8 $d
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:465    .text.bme280_read8:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:470    .text.bme280_read8:00000000 bme280_read8
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:513    .text.bme280_read_block:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:518    .text.bme280_read_block:00000000 bme280_read_block
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:564    .text.bme280_read_calibration:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:569    .text.bme280_read_calibration:00000000 bme280_read_calibration
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:781    .text.bme280_write8:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:786    .text.bme280_write8:00000000 bme280_write8
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:833    .text.BME280_Init:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:839    .text.BME280_Init:00000000 BME280_Init
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:972    .text.BME280_ReadMeasurements:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccdzau2U.s:978    .text.BME280_ReadMeasurements:00000000 BME280_ReadMeasurements
+
+UNDEFINED SYMBOLS
+HAL_I2C_Mem_Read
+HAL_I2C_Mem_Write
+HAL_Delay
+HAL_GetTick

@@ -1,0 +1,162 @@
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"retarget.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Core/Src/retarget.c"
+  20              		.section	.text.__io_putchar,"ax",%progbits
+  21              		.align	1
+  22              		.global	__io_putchar
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	__io_putchar:
+  28              	.LVL0:
+  29              	.LFB137:
+   1:Core/Src/retarget.c **** #include "main.h"
+   2:Core/Src/retarget.c **** #include <stdio.h>
+   3:Core/Src/retarget.c **** 
+   4:Core/Src/retarget.c **** int __io_putchar(int ch)
+   5:Core/Src/retarget.c **** {
+  30              		.loc 1 5 1 view -0
+  31              		.cfi_startproc
+  32              		@ args = 0, pretend = 0, frame = 8
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  34              		.loc 1 5 1 is_stmt 0 view .LVU1
+  35 0000 10B5     		push	{r4, lr}
+  36              	.LCFI0:
+  37              		.cfi_def_cfa_offset 8
+  38              		.cfi_offset 4, -8
+  39              		.cfi_offset 14, -4
+  40 0002 82B0     		sub	sp, sp, #8
+  41              	.LCFI1:
+  42              		.cfi_def_cfa_offset 16
+  43 0004 0446     		mov	r4, r0
+   6:Core/Src/retarget.c ****   uint8_t c = (uint8_t)ch;
+  44              		.loc 1 6 3 is_stmt 1 view .LVU2
+  45              		.loc 1 6 11 is_stmt 0 view .LVU3
+  46 0006 8DF80700 		strb	r0, [sp, #7]
+   7:Core/Src/retarget.c ****   HAL_UART_Transmit(&huart3, &c, 1U, HAL_MAX_DELAY);
+  47              		.loc 1 7 3 is_stmt 1 view .LVU4
+  48 000a 4FF0FF33 		mov	r3, #-1
+  49 000e 0122     		movs	r2, #1
+  50 0010 0DF10701 		add	r1, sp, #7
+  51 0014 0248     		ldr	r0, .L3
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s 			page 2
+
+
+  52              	.LVL1:
+  53              		.loc 1 7 3 is_stmt 0 view .LVU5
+  54 0016 FFF7FEFF 		bl	HAL_UART_Transmit
+  55              	.LVL2:
+   8:Core/Src/retarget.c ****   return ch;
+  56              		.loc 1 8 3 is_stmt 1 view .LVU6
+   9:Core/Src/retarget.c **** }
+  57              		.loc 1 9 1 is_stmt 0 view .LVU7
+  58 001a 2046     		mov	r0, r4
+  59 001c 02B0     		add	sp, sp, #8
+  60              	.LCFI2:
+  61              		.cfi_def_cfa_offset 8
+  62              		@ sp needed
+  63 001e 10BD     		pop	{r4, pc}
+  64              	.LVL3:
+  65              	.L4:
+  66              		.loc 1 9 1 view .LVU8
+  67              		.align	2
+  68              	.L3:
+  69 0020 00000000 		.word	huart3
+  70              		.cfi_endproc
+  71              	.LFE137:
+  73              		.section	.text._write,"ax",%progbits
+  74              		.align	1
+  75              		.global	_write
+  76              		.syntax unified
+  77              		.thumb
+  78              		.thumb_func
+  80              	_write:
+  81              	.LVL4:
+  82              	.LFB138:
+  10:Core/Src/retarget.c **** 
+  11:Core/Src/retarget.c **** int _write(int file, char *ptr, int len)
+  12:Core/Src/retarget.c **** {
+  83              		.loc 1 12 1 is_stmt 1 view -0
+  84              		.cfi_startproc
+  85              		@ args = 0, pretend = 0, frame = 0
+  86              		@ frame_needed = 0, uses_anonymous_args = 0
+  87              		.loc 1 12 1 is_stmt 0 view .LVU10
+  88 0000 10B5     		push	{r4, lr}
+  89              	.LCFI3:
+  90              		.cfi_def_cfa_offset 8
+  91              		.cfi_offset 4, -8
+  92              		.cfi_offset 14, -4
+  93 0002 1446     		mov	r4, r2
+  13:Core/Src/retarget.c ****   (void)file;
+  94              		.loc 1 13 3 is_stmt 1 view .LVU11
+  14:Core/Src/retarget.c ****   HAL_UART_Transmit(&huart3, (uint8_t *)ptr, len, HAL_MAX_DELAY);
+  95              		.loc 1 14 3 view .LVU12
+  96 0004 4FF0FF33 		mov	r3, #-1
+  97 0008 92B2     		uxth	r2, r2
+  98              	.LVL5:
+  99              		.loc 1 14 3 is_stmt 0 view .LVU13
+ 100 000a 0248     		ldr	r0, .L7
+ 101              	.LVL6:
+ 102              		.loc 1 14 3 view .LVU14
+ 103 000c FFF7FEFF 		bl	HAL_UART_Transmit
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s 			page 3
+
+
+ 104              	.LVL7:
+  15:Core/Src/retarget.c ****   return len;
+ 105              		.loc 1 15 3 is_stmt 1 view .LVU15
+  16:Core/Src/retarget.c **** }
+ 106              		.loc 1 16 1 is_stmt 0 view .LVU16
+ 107 0010 2046     		mov	r0, r4
+ 108 0012 10BD     		pop	{r4, pc}
+ 109              	.LVL8:
+ 110              	.L8:
+ 111              		.loc 1 16 1 view .LVU17
+ 112              		.align	2
+ 113              	.L7:
+ 114 0014 00000000 		.word	huart3
+ 115              		.cfi_endproc
+ 116              	.LFE138:
+ 118              		.text
+ 119              	.Letext0:
+ 120              		.file 2 "C:\\ST\\STM32CubeCLT_1.19.0\\GNU-tools-for-STM32\\bin/../lib/gcc/arm-none-eabi/13.3.1/../
+ 121              		.file 3 "C:\\ST\\STM32CubeCLT_1.19.0\\GNU-tools-for-STM32\\bin/../lib/gcc/arm-none-eabi/13.3.1/../
+ 122              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f439xx.h"
+ 123              		.file 5 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 124              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 125              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h"
+ 126              		.file 8 "Core/Inc/main.h"
+ARM GAS  C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s 			page 4
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 retarget.c
+C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s:21     .text.__io_putchar:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s:27     .text.__io_putchar:00000000 __io_putchar
+C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s:69     .text.__io_putchar:00000020 $d
+C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s:74     .text._write:00000000 $t
+C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s:80     .text._write:00000000 _write
+C:\Users\YASSIN~1\AppData\Local\Temp\ccpTiFpX.s:114    .text._write:00000014 $d
+
+UNDEFINED SYMBOLS
+HAL_UART_Transmit
+huart3
