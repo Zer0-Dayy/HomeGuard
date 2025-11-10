@@ -13,7 +13,7 @@ ESP-01 Wi-Fi Module:
   3V3 -> GPIO-2
   3V3 -> GPIO-0
   PB6 (USART1_TX) -> RXD
-  PB7 (USART1_RX) -> TXD
+  PA10 (USART1_RX) -> TXD
 
 BME-280 Combined Digital Sensor:
   PB8 (SCL) -> SCL
