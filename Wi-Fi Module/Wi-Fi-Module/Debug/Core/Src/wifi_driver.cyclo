@@ -1,0 +1,7 @@
+../Core/Src/wifi_driver.c:14:6:WiFi_Init	1
+../Core/Src/wifi_driver.c:24:6:HAL_UART_TxCpltCallback	2
+../Core/Src/wifi_driver.c:30:6:HAL_UARTEx_RxEventCallback	2
+../Core/Src/wifi_driver.c:42:15:WiFi_Send_Command	6
+../Core/Src/wifi_driver.c:62:15:WiFi_Connect	1
+../Core/Src/wifi_driver.c:69:15:WiFi_GetIP	2
+../Core/Src/wifi_driver.c:79:15:WiFi_SendTCP	5
