@@ -2,8 +2,8 @@
 HC-SR04 Ultrasonic Sensor Pin Layout:
   5V -> VCC
   GND -> GND
-  PA5 (GPIO_Output) -> TRIG
-  PA6 (TEM3_CH1) -> ECHO
+  PD13 (TIM4_CH2) -> TRIG
+  PA6 (TIM3_CH1) -> ECHO (USE VOLTAGE DIVIDER 2/3 SINCE PIN CAN'T HANDLE 5V)
 
 ESP-01 Wi-Fi Module:
   3V3 -> VCC
