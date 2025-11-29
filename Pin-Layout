@@ -1,10 +1,15 @@
                                                                         // STM32F4 -> SENSOR \\
-HC-SR04 Ultrasonic Sensor Pin Layout:
+----------------------------------------------------------------------------
+HY-SRF05 Ultrasonic Sensors Pin Layout:
   5V -> VCC
   GND -> GND
+  ---RIGHT SENSOR---
   PD13 (TIM4_CH2) -> TRIG
   PA6 (TIM3_CH1) -> ECHO (USE VOLTAGE DIVIDER 2/3 SINCE PIN CAN'T HANDLE 5V)
-
+  ---LEFT SENSOR---
+  PD14 (TIM4_CH3) -> TRIG
+  PB0 (TIM3_CH3) -> ECHO (USE VOLTAGE DIVIDER 2/3 SINCE PIN CAN'T HANDLE 5V)
+----------------------------------------------------------------------------
 ESP-01 Wi-Fi Module:
   3V3 -> VCC
   GND -> GND
@@ -14,7 +19,7 @@ ESP-01 Wi-Fi Module:
   3V3 -> GPIO-0
   PB6 (USART1_TX) -> RXD
   PA10 (USART1_RX) -> TXD
-
+----------------------------------------------------------------------------
 BME-280 Combined Digital Sensor:
   PB8 (SCL) -> SCL
   PB9 (SDA) -> SDA 
