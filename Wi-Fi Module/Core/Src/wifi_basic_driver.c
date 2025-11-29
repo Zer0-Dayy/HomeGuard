@@ -1,4 +1,4 @@
-#include "wifi_driver.h"
+#include "wifi_basic_driver.h"
 
 
 static UART_HandleTypeDef *wifi_uart;
@@ -81,10 +81,10 @@ wifi_status_t WiFi_Connect(const char *ssid, const char *password){
     memset(ip, 0, sizeof(ip));
     WiFi_GetIP(ip,sizeof(ip));
     if (ip[0] != '\0') {
-    	printf("WiFi_Connect: connected, IP = %s\r\n", ip);
+    	WIFI_LOG("WiFi_Connect: connected, IP = %s\r\n", ip);
     	return WIFI_OK;
     } else {
-    	printf("WiFi_Connect: no IP, connect failed\r\n");
+    	WIFI_LOG("WiFi_Connect: no IP, connect failed\r\n");
     	return WIFI_ERROR;
     }
 }
@@ -137,28 +137,6 @@ wifi_status_t WiFi_SendRaw(const uint8_t* data, uint16_t length){
 	return WIFI_OK;
 }
 
-int build_json(char* output, uint16_t output_size, const sensors_readings_t *data){
-	int written = snprintf(output, (size_t)output_size, "{\"timestamp\":\"%s\",\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f,\"gas\":%.2f}", data->timestamp, data->temperature, data->pressure, data->humidity, data->gas);
-	if(written < 0 || written >= output_size){
-		return -1;
-	}
-	else{
-		return written;
-	}
-}
-
-int build_http_header(char* output, uint16_t output_size, uint16_t body_length){
-	int written = snprintf(output, (size_t)output_size, "POST /upload HTTP/1.1\r\n"
-			"Content-Type: application/json\r\n"
-			"Content-Length: %u\r\n"
-			"\r\n", body_length);
-	if(written < 0 || written >= output_size){
-		return -1;
-	}
-	else{
-		return written;
-	}
-}
 
 wifi_status_t WiFi_Expect(const char *expected, uint32_t timeout_ms){
 	wifi_rx_ready = 0;
@@ -167,7 +145,7 @@ wifi_status_t WiFi_Expect(const char *expected, uint32_t timeout_ms){
 	while(HAL_GetTick() - start < timeout_ms){
 
 		if (wifi_rx_ready == 1){
-			printf("WiFi_Expect: received -> %s\r\n", wifi_rx_shadow_buffer);
+			WIFI_LOG("WiFi_Expect: received -> %s\r\n", wifi_rx_shadow_buffer);
 			if (strstr((char*)wifi_rx_shadow_buffer,expected)){
 				memset(wifi_rx_shadow_buffer,0,sizeof(wifi_rx_shadow_buffer));
 				wifi_rx_ready = 0;
@@ -182,75 +160,8 @@ wifi_status_t WiFi_Expect(const char *expected, uint32_t timeout_ms){
 			memset(wifi_rx_shadow_buffer,0,sizeof(wifi_rx_shadow_buffer));
 		}
 	}
-	printf("WiFi_Expect: TIMEOUT waiting for \"%s\"\r\n", expected);
+	WIFI_LOG("WiFi_Expect: TIMEOUT waiting for \"%s\"\r\n", expected);
 	return WIFI_TIMEOUT;
-}
-
-wifi_status_t WiFi_SendHTTP(const char* ip, uint16_t port, const sensors_readings_t *data){
-	char json_buffer[150];
-	char header_buffer[150];
-	char cmd[150];
-	int json_length;
-	int header_length;
-	json_length = build_json(json_buffer, sizeof(json_buffer), data);
-	if(json_length == -1){
-		printf("WiFi_SendHTTP: JSON build error\r\n");
-		return WIFI_ERROR;
-	}
-	header_length = build_http_header(header_buffer, sizeof(header_buffer), json_length);
-	if(header_length == -1){
-		printf("WiFi_SendHTTP: HEADER build error\r\n");
-		return WIFI_ERROR;
-	}
-	uint16_t total_length = header_length + json_length;
-
-	snprintf(cmd, sizeof(cmd), "AT+CIPSTART=\"TCP\",\"%s\",%u\r\n",ip,port);
-	if(WiFi_Send_Command(cmd,"OK",5000) != WIFI_OK){
-		printf("WiFi_SendHTTP: CIPSTART failed!\r\n");
-		return WIFI_ERROR;
-	}
-
-	snprintf(cmd, sizeof(cmd), "AT+CIPSEND=%u\r\n",(unsigned int)total_length);
-	if(WiFi_Send_Command(cmd,">",5000) != WIFI_OK){
-		printf("WiFi_SendHTTP: CIPSEND failed!\r\n");
-		return WIFI_ERROR;
-	}
-
-	if(WiFi_SendRaw((uint8_t*)header_buffer, header_length) != WIFI_OK){
-		printf("WiFi_SendHTTP: header raw send failed!\r\n");
-		return WIFI_ERROR;
-	}
-
-	if(WiFi_SendRaw((uint8_t*)json_buffer, json_length) != WIFI_OK){
-		printf("WiFi_SendHTTP: body raw send failed!\r\n");
-		return WIFI_ERROR;
-	}
-
-	wifi_status_t status = WiFi_Expect("+IPD", 3000);
-	if (status != WIFI_OK){
-		status = WiFi_Expect("CLOSED", 3000);
-	}
-	if (status != WIFI_OK){
-	    printf("WiFi_SendHTTP: no HTTP response detected\r\n");
-	    return WIFI_TIMEOUT;
-	}
-	else{
-	    printf("WiFi_SendHTTP: HTTP response received\r\n");
-	}
-	WiFi_Send_Command("AT+CIPCLOSE\r\n", "OK", 2000);
-	return WIFI_OK;
-}
-wifi_status_t WiFi_SendSensorReadings(const char* ip, uint16_t port, const sensors_readings_t *data, uint8_t max_retries){
-	for(int attempt = 1; attempt <= max_retries; attempt++){
-		wifi_status_t status = WiFi_SendHTTP(ip,port,data);
-		if(status == WIFI_OK){
-			return WIFI_OK;
-		}
-		else{
-			printf("ATTEMPT %d FAILED: %s.\r\n",attempt,WiFi_StatusToString(status));
-		}
-	}
-	return WIFI_ERROR;
 }
 
 const char* WiFi_StatusToString(wifi_status_t status){

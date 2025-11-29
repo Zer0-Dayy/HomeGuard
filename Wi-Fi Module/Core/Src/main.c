@@ -20,8 +20,7 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "wifi_driver.h"
-#include "stdio.h"
+#include "wifi_sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,7 +104,7 @@ int main(void)
   readings.temperature = 42.1;
   readings.pressure = 1.7;
   readings.humidity = 44.2;
-  WiFi_SendSensorReadings("192.168.229.119", 5000, &readings,5);
+  WiFi_Sensors_Upload(&readings);
   /* USER CODE END 2 */
 
   /* Infinite loop */

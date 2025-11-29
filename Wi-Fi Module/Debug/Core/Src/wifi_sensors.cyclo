@@ -1,0 +1,2 @@
+../Core/Src/wifi_sensors.c:3:12:build_sensor_json	5
+../Core/Src/wifi_sensors.c:27:15:WiFi_Sensors_Upload	2
