@@ -25,3 +25,8 @@ BME-280 Combined Digital Sensor:
   PB9 (SDA) -> SDA 
   3V3 ->  VCC
   GND  -> GND
+----------------------------------------------------------------------------
+MQ2 - Gaz sensor:
+  5V  -> VCC 
+  GND -> GND
+  PA0 -> A0
