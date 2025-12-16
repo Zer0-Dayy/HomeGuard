@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from database import get_latest_readings, get_historical_data
 
+
 # Page configuration
 st.set_page_config(
     page_title="HomeGuard Monitoring Dashboard",
