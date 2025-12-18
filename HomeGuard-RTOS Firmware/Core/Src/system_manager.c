@@ -15,6 +15,22 @@ void System_RunOnce(void)
 {
 	static uint32_t phase_start_tick = 0;
 
+	if (system_state == SYSTEM_SLEEP)
+	{
+	    /* Pause SysTick while entering STOP to avoid breaking the FreeRTOS scheduler */
+	    HAL_SuspendTick();
+	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+	    HAL_ResumeTick();
+
+	    /* Restore clocks and timers after waking */
+	    SystemClock_Config();
+	    Movement_ReInitAfterStop();
+
+	    system_phase = MOVEMENT_PHASE;
+	    phase_start_tick = HAL_GetTick();
+	    return;
+	}
+
 
 	switch (system_phase)
 	{
@@ -55,15 +71,6 @@ void System_Task(void *argument)
 
 void vApplicationIdleHook(void)
 {
-    if (system_state == SYSTEM_SLEEP)
-    {
-        __disable_irq();
-        HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-        __enable_irq();
-
-        SystemClock_Config();
-        Movement_ReInitAfterStop();
-    }
 }
 
 
@@ -82,4 +89,3 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         }
     }
 }
-
