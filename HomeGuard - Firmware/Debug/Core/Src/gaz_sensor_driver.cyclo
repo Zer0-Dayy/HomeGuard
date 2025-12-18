@@ -1,0 +1,6 @@
+../Core/Src/gaz_sensor_driver.c:13:6:Gaz_Sensor_Init	2
+../Core/Src/gaz_sensor_driver.c:29:21:Gaz_Sensor_Calibrate	8
+../Core/Src/gaz_sensor_driver.c:64:21:Gaz_Sensor_Read	8
+../Core/Src/gaz_sensor_driver.c:95:26:Gaz_Sensor_ReadRawAverage	8
+../Core/Src/gaz_sensor_driver.c:129:14:Gaz_Sensor_ComputeVoltage	3
+../Core/Src/gaz_sensor_driver.c:140:14:Gaz_Sensor_ComputeResistance	4

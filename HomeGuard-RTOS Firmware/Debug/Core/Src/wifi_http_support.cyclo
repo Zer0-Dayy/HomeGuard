@@ -1,0 +1,5 @@
+../Core/Src/wifi_http_support.c:3:15:WiFi_HTTP_Send	28
+../Core/Src/wifi_http_support.c:114:15:WiFi_HTTP_POST	1
+../Core/Src/wifi_http_support.c:118:15:WiFi_HTTP_GET	1
+../Core/Src/wifi_http_support.c:122:15:WiFi_HTTP_PUT	1
+../Core/Src/wifi_http_support.c:126:15:WiFi_HTTP_DELETE	1

@@ -1,0 +1,2 @@
+../Core/Src/sensors_service.c:14:6:Sensors_Init	3
+../Core/Src/sensors_service.c:39:6:Sensors_Read	5
