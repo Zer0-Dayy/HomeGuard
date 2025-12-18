@@ -1,0 +1,92 @@
+2025-12-17 13:30:10,851 [INFO] Forwarder service starting...
+2025-12-17 13:30:10,995 [INFO] package: mysql.connector.plugins
+2025-12-17 13:30:10,995 [INFO] plugin_name: caching_sha2_password
+2025-12-17 13:30:10,995 [INFO] AUTHENTICATION_PLUGIN_CLASS: MySQLCachingSHA2PasswordAuthPlugin
+2025-12-17 13:45:44,472 [INFO] Forwarder service starting...
+2025-12-17 13:45:44,622 [INFO] package: mysql.connector.plugins
+2025-12-17 13:45:44,623 [INFO] plugin_name: caching_sha2_password
+2025-12-17 13:45:44,623 [INFO] AUTHENTICATION_PLUGIN_CLASS: MySQLCachingSHA2PasswordAuthPlugin
+2025-12-17 13:45:44,626 [INFO] New rows to send: 1
+2025-12-17 13:45:45,608 [INFO] Sent 1 records, status=202
+2025-12-17 13:45:45,609 [WARNING] Server response: {"batch_size":1,"job_id":"237ce0ea-8ec7-4372-8f2f-60436a9dd938","status":"accepted"}
+
+2025-12-17 13:45:45,610 [WARNING] Send failed, will retry later.
+2025-12-17 13:48:15,704 [INFO] New rows to send: 1
+2025-12-17 13:48:16,947 [INFO] Sent 1 records, status=202
+2025-12-17 13:48:16,948 [WARNING] Server response: {"batch_size":1,"job_id":"4fb91752-84ab-43e3-9dc6-4c1f6f6fb766","status":"accepted"}
+
+2025-12-17 13:48:16,949 [WARNING] Send failed, will retry later.
+2025-12-17 13:50:47,041 [INFO] New rows to send: 1
+2025-12-17 13:50:47,794 [INFO] Sent 1 records, status=202
+2025-12-17 13:50:47,794 [WARNING] Server response: {"batch_size":1,"job_id":"789acec2-8068-4784-ac0f-4f70ceadf1df","status":"accepted"}
+
+2025-12-17 13:50:47,795 [WARNING] Send failed, will retry later.
+2025-12-17 13:53:17,893 [INFO] New rows to send: 1
+2025-12-17 13:53:17,943 [INFO] Sent 1 records, status=202
+2025-12-17 13:53:17,943 [WARNING] Server response: {"batch_size":1,"job_id":"ce9f5b1e-43ae-41d7-90ab-c752a5128330","status":"accepted"}
+
+2025-12-17 13:53:17,943 [WARNING] Send failed, will retry later.
+2025-12-17 13:58:49,712 [INFO] New rows to send: 1
+2025-12-17 13:58:49,751 [INFO] Sent 1 records, status=202
+2025-12-17 13:58:49,752 [WARNING] Server response: {"batch_size":1,"job_id":"f75a414e-6ced-49da-91ed-f3d7de264218","status":"accepted"}
+
+2025-12-17 13:58:49,752 [WARNING] Send failed, will retry later.
+2025-12-17 14:01:19,833 [INFO] New rows to send: 3
+2025-12-17 14:01:19,876 [INFO] Sent 3 records, status=202
+2025-12-17 14:01:19,876 [WARNING] Server response: {"batch_size":3,"job_id":"ec1b0cb9-8e8d-483e-b95e-eb82465adc23","status":"accepted"}
+
+2025-12-17 14:01:19,876 [WARNING] Send failed, will retry later.
+2025-12-17 14:03:49,947 [INFO] New rows to send: 7
+2025-12-17 14:03:49,975 [INFO] Sent 7 records, status=202
+2025-12-17 14:03:49,975 [WARNING] Server response: {"batch_size":7,"job_id":"6b0ca846-4e95-4328-957c-5972bf4212bd","status":"accepted"}
+
+2025-12-17 14:03:49,975 [WARNING] Send failed, will retry later.
+2025-12-17 14:06:20,043 [INFO] New rows to send: 9
+2025-12-17 14:06:20,082 [INFO] Sent 9 records, status=202
+2025-12-17 14:06:20,083 [WARNING] Server response: {"batch_size":9,"job_id":"3121ce9c-82d8-45ae-bb88-3fafe117a234","status":"accepted"}
+
+2025-12-17 14:06:20,083 [WARNING] Send failed, will retry later.
+2025-12-17 14:08:50,161 [INFO] New rows to send: 9
+2025-12-17 14:08:50,214 [INFO] Sent 9 records, status=202
+2025-12-17 14:08:50,214 [WARNING] Server response: {"batch_size":9,"job_id":"14fbfbcc-b439-4e02-9a91-f7e0e318a70c","status":"accepted"}
+
+2025-12-17 14:08:50,214 [WARNING] Send failed, will retry later.
+2025-12-17 14:11:20,307 [INFO] New rows to send: 14
+2025-12-17 14:11:20,376 [INFO] Sent 14 records, status=202
+2025-12-17 14:11:20,377 [WARNING] Server response: {"batch_size":14,"job_id":"e1ac5841-b14e-4d8c-9396-77948df0f340","status":"accepted"}
+
+2025-12-17 14:11:20,377 [WARNING] Send failed, will retry later.
+2025-12-17 14:13:50,443 [INFO] New rows to send: 16
+2025-12-17 14:13:50,480 [INFO] Sent 16 records, status=202
+2025-12-17 14:13:50,480 [WARNING] Server response: {"batch_size":16,"job_id":"5fe85924-3d92-4648-87e6-45ac2ba1a652","status":"accepted"}
+
+2025-12-17 14:13:50,480 [WARNING] Send failed, will retry later.
+2025-12-17 14:16:20,622 [INFO] New rows to send: 16
+2025-12-17 14:16:20,675 [INFO] Sent 16 records, status=202
+2025-12-17 14:16:20,676 [WARNING] Server response: {"batch_size":16,"job_id":"35c75103-c423-4819-b30f-360a3b632a2d","status":"accepted"}
+
+2025-12-17 14:16:20,676 [WARNING] Send failed, will retry later.
+2025-12-17 23:39:56,128 [INFO] Forwarder service starting...
+2025-12-17 23:39:56,439 [INFO] package: mysql.connector.plugins
+2025-12-17 23:39:56,439 [INFO] plugin_name: caching_sha2_password
+2025-12-17 23:39:56,439 [INFO] AUTHENTICATION_PLUGIN_CLASS: MySQLCachingSHA2PasswordAuthPlugin
+2025-12-17 23:39:56,445 [INFO] New rows to send: 3
+2025-12-17 23:39:58,704 [INFO] Sent 3 records, status=202
+2025-12-17 23:39:58,706 [WARNING] Server response: {"batch_size":3,"job_id":"6f470fb3-3214-48e3-b8d4-fb9f58c4e934","status":"accepted"}
+
+2025-12-17 23:39:58,706 [WARNING] Send failed, will retry later.
+2025-12-17 23:42:29,035 [INFO] New rows to send: 3
+2025-12-17 23:42:29,118 [INFO] Sent 3 records, status=202
+2025-12-17 23:42:29,118 [WARNING] Server response: {"batch_size":3,"job_id":"f12728b5-8e32-42bd-a1e5-5c3524c9d83b","status":"accepted"}
+
+2025-12-17 23:42:29,119 [WARNING] Send failed, will retry later.
+2025-12-17 23:44:59,402 [INFO] New rows to send: 3
+2025-12-17 23:44:59,632 [INFO] Sent 3 records, status=202
+2025-12-17 23:44:59,633 [WARNING] Server response: {"batch_size":3,"job_id":"dcee75c9-fdde-4174-96fb-e1478189dadd","status":"accepted"}
+
+2025-12-17 23:44:59,633 [WARNING] Send failed, will retry later.
+2025-12-17 23:47:29,887 [INFO] New rows to send: 3
+2025-12-17 23:47:30,190 [INFO] Sent 3 records, status=202
+2025-12-17 23:47:30,191 [WARNING] Server response: {"batch_size":3,"job_id":"2b2505f0-8520-461f-8868-fc5f7264c89a","status":"accepted"}
+
+2025-12-17 23:47:30,191 [WARNING] Send failed, will retry later.
