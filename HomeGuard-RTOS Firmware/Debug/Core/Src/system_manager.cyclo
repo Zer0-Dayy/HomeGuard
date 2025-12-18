@@ -1,0 +1,5 @@
+../Core/Src/system_manager.c:7:6:System_Init	1
+../Core/Src/system_manager.c:14:6:System_RunOnce	4
+../Core/Src/system_manager.c:47:6:System_Task	1
+../Core/Src/system_manager.c:56:6:vApplicationIdleHook	2
+../Core/Src/system_manager.c:70:6:HAL_GPIO_EXTI_Callback	3

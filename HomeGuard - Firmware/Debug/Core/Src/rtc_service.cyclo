@@ -1,0 +1,2 @@
+../Core/Src/rtc_service.c:6:6:RTC_Service_Init	4
+../Core/Src/rtc_service.c:42:6:RTC_GetTimestamp	3
