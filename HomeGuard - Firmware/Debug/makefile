@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := HomeGuard
+BUILD_ARTIFACT_NAME := HomeGuard - Firmware
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-HomeGuard.elf \
+HomeGuard\ -\ Firmware.elf \
 
 MAP_FILES += \
-HomeGuard.map \
+HomeGuard\ -\ Firmware.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-HomeGuard.list \
+HomeGuard\ -\ Firmware.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: HomeGuard.elf secondary-outputs
+main-build: HomeGuard\ -\ Firmware.elf secondary-outputs
 
 # Tool invocations
-HomeGuard.elf HomeGuard.map: $(OBJS) $(USER_OBJS) C:\Users\ByeByeHell\Documents\Computer\ Programming\STM32\HomeGuard\STM32F439ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "HomeGuard.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\ByeByeHell\Documents\Computer Programming\STM32\HomeGuard\STM32F439ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HomeGuard.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+HomeGuard\ -\ Firmware.elf HomeGuard\ -\ Firmware.map: $(OBJS) $(USER_OBJS) D:\Documents\Software\ Development\STM\ Projects\HomeGuard\ -\ Firmware\STM32F439ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "HomeGuard - Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\Documents\Software Development\STM Projects\HomeGuard - Firmware\STM32F439ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HomeGuard - Firmware.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-HomeGuard.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "HomeGuard.list"
+HomeGuard\ -\ Firmware.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "HomeGuard - Firmware.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) HomeGuard.elf HomeGuard.list HomeGuard.map default.size.stdout
+	-$(RM) HomeGuard\ -\ Firmware.elf HomeGuard\ -\ Firmware.list HomeGuard\ -\ Firmware.map HomeGuard\\ -\\ Firmware.elf default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

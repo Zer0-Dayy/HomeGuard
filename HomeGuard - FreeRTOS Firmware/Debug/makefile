@@ -38,34 +38,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := HomeGuard-RTOS
+BUILD_ARTIFACT_NAME := HomeGuard - FreeRTOS Firmware
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-HomeGuard-RTOS.elf \
+HomeGuard\ -\ FreeRTOS\ Firmware.elf \
 
 MAP_FILES += \
-HomeGuard-RTOS.map \
+HomeGuard\ -\ FreeRTOS\ Firmware.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-HomeGuard-RTOS.list \
+HomeGuard\ -\ FreeRTOS\ Firmware.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: HomeGuard-RTOS.elf secondary-outputs
+main-build: HomeGuard\ -\ FreeRTOS\ Firmware.elf secondary-outputs
 
 # Tool invocations
-HomeGuard-RTOS.elf HomeGuard-RTOS.map: $(OBJS) $(USER_OBJS) C:\Users\ByeByeHell\Documents\Computer\ Programming\STM32\HomeGuard-RTOS\STM32F439ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "HomeGuard-RTOS.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\ByeByeHell\Documents\Computer Programming\STM32\HomeGuard-RTOS\STM32F439ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HomeGuard-RTOS.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+HomeGuard\ -\ FreeRTOS\ Firmware.elf HomeGuard\ -\ FreeRTOS\ Firmware.map: $(OBJS) $(USER_OBJS) D:\Documents\Software\ Development\STM\ Projects\HomeGuard\ -\ FreeRTOS\ Firmware\STM32F439ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "HomeGuard - FreeRTOS Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\Documents\Software Development\STM Projects\HomeGuard - FreeRTOS Firmware\STM32F439ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HomeGuard - FreeRTOS Firmware.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -74,14 +74,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-HomeGuard-RTOS.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "HomeGuard-RTOS.list"
+HomeGuard\ -\ FreeRTOS\ Firmware.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "HomeGuard - FreeRTOS Firmware.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) HomeGuard-RTOS.elf HomeGuard-RTOS.list HomeGuard-RTOS.map default.size.stdout
+	-$(RM) HomeGuard\ -\ FreeRTOS\ Firmware.elf HomeGuard\ -\ FreeRTOS\ Firmware.list HomeGuard\ -\ FreeRTOS\ Firmware.map HomeGuard\\ -\\ FreeRTOS\\ Firmware.elf default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
